@@ -21,6 +21,8 @@ Array.prototype.findSecondLastIndex = function(predicate) {
     return -1;
 }
 
+const manipulate = document.getElementById("manipulate");
+
 const editor_canvas = document.getElementById("editor-canvas");
 const editor_ctx = editor_canvas.getContext("2d");
 const editor_info = document.getElementById("editor-info");
@@ -37,6 +39,15 @@ const button_deselect_all = document.getElementById("button-deselect-all");
 const button_drag = document.getElementById("button-drag");
 
 const jump_glyph = document.getElementById("jump-glyph");
+
+// Settings
+const button_resize = document.getElementById("button-resize");
+const input_width = document.getElementById("input-width");
+const input_height = document.getElementById("input-height");
+const input_ascend = document.getElementById("input-ascend");
+const input_descend = document.getElementById("input-descend");
+const input_baseline = document.getElementById("input-baseline");
+const input_spacing = document.getElementById("input-spacing");
 
 const ZOOM_STRENGTH = 0.001;
 
@@ -123,8 +134,12 @@ let editor_status = {
 }
 
 let font_data = {
-    width: 10,
-    height: 14,
+    width: +(input_width.value || 8),
+    height: +(input_height.value || 10),
+    baseline: +(input_baseline.value || 8),
+    ascend: +(input_ascend.value || 7),
+    descend: +(input_descend.value || -1),
+    spacing: +(input_spacing.value || 1),
     glyphs: new Map(),
     history: [],
 }
@@ -426,11 +441,11 @@ editor_canvas.addEventListener("mouseup", (event) => {
     editor_status.tmp_mode = null;
 });
 
-editor_canvas.addEventListener("hover", (event) => {
+editor_canvas.addEventListener("mouseenter", (event) => {
     editor_status.hovered = true;
 });
 
-editor_canvas.addEventListener("blur", (event) => {
+editor_canvas.addEventListener("mouseleave", (event) => {
     editor_status.mouse_down = false;
     editor_status.hovered = false;
 });
@@ -468,6 +483,51 @@ jump_glyph.addEventListener("change", (event) => {
         jump_glyph.value = "";
     }
 });
+
+
+// === Settings ===
+
+button_resize.addEventListener("click", (event) => {
+    let width = +(input_width.value || 8);
+    let height = +(input_height.value || 8);
+
+    if (!input_width.value && !input_height.value || isNaN(width) || isNaN(height)) return;
+
+    font_data.width = width;
+    font_data.height = height;
+
+    for (let glyph of font_data.glyphs) {
+        while (glyph.length > height) glyph.pop();
+        for (let row of glyph) {
+            while (row.length > width) row.pop();
+            while (row.length < width) row.push(false);
+        }
+        while (glyph.length < height) glyph.push(new Array(width).fill(false));
+    }
+
+    draw();
+});
+
+function update_spacing() {
+    if (!isNaN(+input_baseline.value)) font_data.baseline = +input_baseline.value;
+    if (!isNaN(+input_ascend.value)) font_data.ascend = +input_ascend.value;
+    if (!isNaN(+input_descend.value)) font_data.descend = +input_descend.value;
+    if (!isNaN(+input_spacing.value)) font_data.spacing = +input_spacing.value;
+
+    draw();
+}
+
+input_baseline.addEventListener("change", update_spacing);
+input_baseline.addEventListener("keyup", update_spacing);
+
+input_ascend.addEventListener("change", update_spacing);
+input_ascend.addEventListener("keyup", update_spacing);
+
+input_descend.addEventListener("change", update_spacing);
+input_descend.addEventListener("keyup", update_spacing);
+
+input_spacing.addEventListener("change", update_spacing);
+input_spacing.addEventListener("keyup", update_spacing);
 
 // Of course fromCharCode doesn't handle utf-16, so we have to manually do the conversion and hope it works
 function to_utf16(codepoint) {

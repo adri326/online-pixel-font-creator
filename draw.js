@@ -19,8 +19,8 @@ const COLOR_GRID = "#403060";
 const COLOR_CURRENT = COLOR_PRIMARY_LIGHT;
 const COLOR_NEIGHBORS_BG = COLOR_GRAY_LIGHT;
 const COLOR_NEIGHBORS_CURRENT_BG = COLOR_WHITE;
-const COLOR_NEIGHBORS = COLOR_PRIMARY_DARK;
-const COLOR_NEIGHBORS_TEXT = COLOR_PRIMARY_LIGHT;
+const COLOR_NEIGHBORS = COLOR_PRIMARY_LIGHT;
+const COLOR_NEIGHBORS_TEXT = COLOR_GRAY_DARK;
 
 function draw() {
     editor_ctx.fillStyle = COLOR_BG;
@@ -118,6 +118,26 @@ function draw() {
     }
 
     editor_ctx.lineWidth = 1;
+    editor_ctx.strokeStyle = COLOR_GRID;
+    editor_ctx.stroke();
+
+    // Draw guides
+
+    editor_ctx.beginPath();
+    editor_ctx.moveTo(...offset_half(editor_pos(0, font_data.baseline)));
+    editor_ctx.lineTo(...offset_half(editor_pos(font_data.width, font_data.baseline)));
+
+    editor_ctx.lineWidth = 3;
+    editor_ctx.strokeStyle = COLOR_ALT_LIGHT;
+    editor_ctx.stroke();
+
+    editor_ctx.beginPath();
+    editor_ctx.moveTo(...offset_half(editor_pos(0, font_data.baseline - font_data.descend)));
+    editor_ctx.lineTo(...offset_half(editor_pos(font_data.width, font_data.baseline - font_data.descend)));
+    editor_ctx.moveTo(...offset_half(editor_pos(0, font_data.baseline - font_data.ascend)));
+    editor_ctx.lineTo(...offset_half(editor_pos(font_data.width, font_data.baseline - font_data.ascend)));
+
+    editor_ctx.lineWidth = 3;
     editor_ctx.strokeStyle = COLOR_GRID;
     editor_ctx.stroke();
 

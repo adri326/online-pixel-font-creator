@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="./style.css">
     <script src="draw.js"></script>
     <script src="main.js" defer></script>
+    <script src="resize.js" defer></script>
 </head>
 <body>
     <div id="editor">
@@ -28,6 +29,25 @@
             <input type="text" placeholder="Jump to glyph..." id="jump-glyph">
             <span id="editor-info" class="loading">Loading information...</span>
         </div>
+    </div>
+    <div id="resizer"><div></div></div>
+    <div id="manipulate">
+        <div id="settings">
+            <h2>Settings</h2>
+            <div>
+                Width: <input type="text" id="input-width" class="small" placeholder="8">
+                Height: <input type="text" id="input-height" class="small" placeholder="10">
+                <button id="button-resize">Apply!</button>
+            </div>
+            <h2>Spacing</h2>
+            <div class="flex wrap">
+                <span>Baseline: <input type="text" id="input-baseline" class="small" placeholder="8"></span>
+                <span>Ascend: <input type="text" id="input-ascend" class="small" placeholder="7"></span>
+                <span>Descend: <input type="text" id="input-descend" class="small" placeholder="-1"></span>
+                <span>Spacing: <input type="text" id="input-spacing" class="small" placeholder="1"></span>
+            </div>
+        </div>
+        <div id="preview">This is the preview (TODO)!</div>
     </div>
 </body>
 </html>

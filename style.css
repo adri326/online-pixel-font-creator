@@ -20,12 +20,22 @@ body {
     --color-black: #101010;
 }
 
+body.resize-horizontal, body.resize-vertical {
+    user-select: none;
+}
+
+body.resize-horizontal {
+    cursor: col-resize;
+}
+
+body.resize-vertical {
+    cursor: row-resize;
+}
+
 #editor {
-    width: 100%;
-    flex-grow: 1;
-    flex-shrink: 1;
     display: flex;
     flex-direction: column;
+    width: calc(75% - 0.5em);
     height: 100%;
     align-items: flex-start;
 }
@@ -60,25 +70,32 @@ body {
     line-height: 1.9em;
 }
 
-#editor-toolbox > button, #editor-toolbox > input[type="text"] {
+button, input[type="text"] {
     all: unset;
     font-size: inherit;
     color: inherit;
     font-family: inherit;
-    border: 1px solid #D9CAB3;
-    background-color: transparent;
     height: 1.7em;
     line-height: 1.3em;
     box-sizing: border-box;
-    display: block;
     padding: 0.2em 0.4em;
     margin-left: 0.2em;
     margin-right: 0.2em;
     margin-bottom: 0.1em;
     margin-top: 0.1em;
-    box-shadow: 0px -1px 4px -2px transparent;
-    user-select: none;
     border-radius: 1px;
+}
+
+button {
+    cursor: pointer;
+    user-select: none;
+}
+
+#editor-toolbox > button, #editor-toolbox > input[type="text"] {
+    display: block;
+    box-shadow: 0px -1px 4px -2px transparent;
+    border: 1px solid #D9CAB3;
+    background-color: transparent;
     transition: background-color 0.2s, box-shadow 0.2s, border 0.2s, color 0.2s;
 }
 
@@ -126,4 +143,106 @@ body {
 
 #editor-info.loading {
     font-style: italic;
+}
+
+#manipulate {
+    width: calc(25% - 0.5em);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+}
+
+#resizer {
+    background: var(--color-gray-light);
+    width: 1em;
+    position: relative;
+    cursor: col-resize;
+}
+
+#resizer > div, #resizer > div::before {
+    content: "";
+    position: absolute;
+    width: 0.1em;
+    height: 4em;
+    background: var(--color-primary-light);
+    transform: translate(-50%, -50%);
+}
+
+#resizer > div {
+    left: calc(50% + 0.1em);
+    top: 50%;
+}
+
+#resizer > div::before {
+    left: -0.2em;
+    top: 50%;
+}
+
+#settings {
+    background: var(--color-gray-medium);
+    padding: 2em 1em;
+    font-family: monospace;
+    font-size: 12pt;
+}
+
+#settings input[type="text"], #settings button {
+    background: var(--color-white);
+    border: 1px solid var(--color-primary-dark);
+    border-radius: 2px;
+    box-shadow: 0px 2px 4px -2px transparent;
+    transition: background-color 0.2s, box-shadow 0.2s, border 0.2s, color 0.2s;
+}
+
+#settings input::placeholder {
+    opacity: 1;
+    color: var(--color-gray-dark);
+}
+
+#settings input:hover, #settings input:focus {
+    box-shadow: 0px 2px 4px -2px rgba(0, 0, 0, 0.5);
+}
+
+#settings input.small {
+    width: 5em;
+}
+
+#settings button:hover {
+    border: 1px solid var(--color-black);
+    background-color: var(--color-alt-light);
+    box-shadow: 0px 2px 4px -2px rgba(0, 0, 0, 0.5);
+}
+
+#settings button:active {
+    border: 1px solid var(--color-black);
+    background-color: var(--color-alt-dark);
+}
+
+#preview {
+    background: var(--color-white);
+    color: var(--color-primary-dark);
+    flex-grow: 1;
+    padding: 0.5em 1em;
+}
+
+h2 {
+    margin: 0.5em 0;
+    font-size: inherit;
+}
+
+#settings .flex {
+    width: 90%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#settings .flex * {
+    margin-left: 0.2em;
+    margin-right: 0.2em;
+}
+
+#settings .flex.wrap {
+    flex-wrap: wrap;
 }
