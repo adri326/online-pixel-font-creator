@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Online Pixel Font creator</title>
+    <link rel="stylesheet" href="./style.css">
+    <script src="main.js" defer></script>
+</head>
+<body>
+    <div id="editor">
+        <canvas id="editor-canvas">Sorry, your browser needs to support canvases and javascript to see this!</canvas>
+        <div id="editor-toolbox">
+            <button id="button-xor" onclick="editor_status.operation = OP_XOR; update_buttons()" class="active">XOR</button>
+            <button id="button-one" onclick="editor_status.operation = OP_ONE; update_buttons()">ONE</button>
+            <button id="button-zero" onclick="editor_status.operation = OP_ZERO; update_buttons()">ZERO</button>
+            <input type="text" placeholder="Jump to glyph..." id="jump-glyph">
+            <div id="editor-info" class="loading">Loading information...</div>
+        </div>
+    </div>
+</body>
+</html>
