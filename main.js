@@ -5,14 +5,16 @@ const editor_info = document.getElementById("editor-info");
 const button_xor = document.getElementById("button-xor");
 const button_one = document.getElementById("button-one");
 const button_zero = document.getElementById("button-zero");
+const button_draw = document.getElementById("button-draw");
+const button_move = document.getElementById("button-move");
 const jump_glyph = document.getElementById("jump-glyph");
 
 const ZOOM_STRENGTH = 0.001;
-const PREVIEW_MULT = 2;
 
 const MODE_NONE = 0;
 const MODE_DRAW = 1;
-const MODE_DRAG = 2;
+const MODE_MOVE = 2;
+const MODE_SELECT = 3;
 
 const OP_XOR = 0;
 const OP_ONE = 1;
@@ -24,7 +26,7 @@ let unicode_blocks = null;
 let editor_status = {
     current_glyph: 65,
     get pixel_size() {
-        return Math.round(Math.pow(2, this.zoom));
+        return Math.pow(2, this.zoom);
     },
     cx: 0,
     cy: 0,
@@ -33,14 +35,36 @@ let editor_status = {
     zoom: 5,
     hovered: false,
 
-    tmp_mode: null,
-    persistent_mode: MODE_DRAW,
-    operation: OP_XOR,
-
-    pixels_covered: new Set(),
+    _tmp_mode: null,
+    set tmp_mode(value) {
+        this._tmp_mode = value;
+        update_buttons();
+    },
+    get tmp_mode() {
+        return this._tmp_mode;
+    },
+    _persistent_mode: MODE_DRAW,
+    set persistent_mode(value) {
+        this._persistent_mode = value;
+        update_buttons();
+    },
+    get persistent_mode() {
+        return this._persistent_mode;
+    },
     get mode() {
         return this.tmp_mode ?? this.persistent_mode;
-    }
+    },
+
+    _operation: OP_XOR,
+    set operation(value) {
+        this._operation = value;
+        update_buttons();
+    },
+    get operation() {
+        return this._operation;
+    },
+    pixels_covered: new Set(),
+    pixels_selected: new Set(),
 }
 
 let font_data = {
@@ -102,104 +126,9 @@ function resize() {
     draw();
 }
 
-function draw() {
-    editor_ctx.clearRect(0, 0, editor_canvas.width, editor_canvas.height);
-
-    function editor_pos(x, y) {
-        return [x * editor_status.pixel_size + editor_status.cx, y * editor_status.pixel_size + editor_status.cy];
-    }
-
-    // Adds 0.5 to x and y to produce pixel-perfect lines
-    function offset_half([x, y]) {
-        return [x + 0.5, y + 0.5];
-    }
-
-    // Draw grid
-    let current_glyph = font_data.glyphs.get(editor_status.current_glyph);
-    if (current_glyph) {
-        editor_ctx.fillStyle = "#212326";
-        for (let y = 0; y < font_data.height; y++) {
-            for (let x = 0; x < font_data.width; x++) {
-                if (current_glyph[y][x]) {
-                    editor_ctx.fillRect(...editor_pos(x, y), editor_status.pixel_size, editor_status.pixel_size);
-                }
-            }
-        }
-    }
-
-    editor_ctx.beginPath();
-    for (let x = 0; x <= font_data.width; x++) {
-        editor_ctx.moveTo(...offset_half(editor_pos(x, 0)));
-        editor_ctx.lineTo(...offset_half(editor_pos(x, font_data.height)));
-    }
-
-    for (let y = 0; y <= font_data.height; y++) {
-        editor_ctx.moveTo(...offset_half(editor_pos(0, y)));
-        editor_ctx.lineTo(...offset_half(editor_pos(font_data.width, y)));
-    }
-
-    editor_ctx.lineWidth = 1;
-    editor_ctx.strokeStyle = "#403060";
-    editor_ctx.stroke();
-
-    // Draw next and previous characters
-
-    editor_ctx.fillStyle = "#d0d0d0";
-    editor_ctx.fillRect(
-        0,
-        editor_canvas.height - (font_data.height + 2) * PREVIEW_MULT,
-        editor_canvas.width,
-        (font_data.height + 2) * PREVIEW_MULT
-    );
-
-    let n_chars = Math.floor(editor_canvas.width / (font_data.width + 2) / PREVIEW_MULT);
-
-    editor_ctx.font = (font_data.height * PREVIEW_MULT * 0.75) + "px monospace";
-    editor_ctx.textAlign = "center";
-    editor_ctx.textBaseline = "middle";
-    for (let n = 0; n < n_chars; n++) {
-        let offset = n - Math.round(n_chars / 2);
-        let x = (n * (font_data.width + 2) + 1) * PREVIEW_MULT;
-        let y = editor_canvas.height - (font_data.height + 1) * PREVIEW_MULT;
-
-        if (offset === 0) {
-            editor_ctx.fillStyle = "#f0f0f0";
-            editor_ctx.fillRect(
-                x - PREVIEW_MULT,
-                y - PREVIEW_MULT,
-                (font_data.width + 2) * PREVIEW_MULT,
-                (font_data.height + 2) * PREVIEW_MULT
-            );
-        }
-
-        let current_glyph = font_data.glyphs.get(editor_status.current_glyph + offset);
-        if (current_glyph) {
-            editor_ctx.fillStyle = "#000000";
-            for (let dy = 0; dy < font_data.height; dy++) {
-                for (let dx = 0; dx < font_data.width; dx++) {
-                    if (!current_glyph[dy][dx]) continue;
-                    editor_ctx.fillRect(
-                        x + dx * PREVIEW_MULT,
-                        y + dy * PREVIEW_MULT,
-                        PREVIEW_MULT,
-                        PREVIEW_MULT
-                    );
-                }
-            }
-        } else {
-            editor_ctx.fillStyle = "#808080";
-            editor_ctx.fillText(
-                String.fromCharCode(editor_status.current_glyph + offset),
-                x + font_data.width * PREVIEW_MULT / 2,
-                y + font_data.height * PREVIEW_MULT / 2 + PREVIEW_MULT
-            );
-        }
-    }
-}
-
 function editor_place_pixel(x, y) {
-    let px = Math.floor((x - editor_status.cx) / editor_status.pixel_size);
-    let py = Math.floor((y - editor_status.cy) / editor_status.pixel_size);
+    let px = Math.floor((x - editor_status.cx - (editor_canvas.width - font_data.width * editor_status.pixel_size) / 2) / editor_status.pixel_size);
+    let py = Math.floor((y - editor_status.cy - (editor_canvas.height - font_data.height * editor_status.pixel_size) / 2) / editor_status.pixel_size);
 
     if (px >= 0 && py >= 0 && px < font_data.width && py < font_data.height && !editor_status.pixels_covered.has(`${px},${py}`)) {
         editor_status.pixels_covered.add(`${px},${py}`);
@@ -227,7 +156,7 @@ function editor_click(x, y) {
 }
 
 function editor_drag(x, y) {
-    if (editor_status.mode === MODE_DRAG) {
+    if (editor_status.mode === MODE_MOVE) {
         editor_status.cx = editor_status.old_cx + x - editor_status.mouse_down_x;
         editor_status.cy = editor_status.old_cy + y - editor_status.mouse_down_y;
     } else if (editor_status.mode === MODE_DRAW) {
@@ -244,8 +173,8 @@ function update_info() {
 
     let info_text = `U+${pad(editor_status.current_glyph.toString(16), 4)}`;
     info_text += ` (${editor_status.current_glyph}): `;
-    info_text += `"${String.fromCharCode(editor_status.current_glyph)}" `;
-    info_text += unicode_data.get(editor_status.current_glyph);
+    info_text += `"${to_utf16(editor_status.current_glyph)}" `;
+    info_text += unicode_data.get(editor_status.current_glyph); // Returns undefined for the CJK characters
     let block = (unicode_blocks ?? []).find(block => block[0] <= editor_status.current_glyph && block[1] >= editor_status.current_glyph);
     if (block) {
         info_text += `; Block: ${block[2]}`;
@@ -258,6 +187,9 @@ function update_buttons() {
     button_xor.className = editor_status.operation === OP_XOR ? "active" : "";
     button_one.className = editor_status.operation === OP_ONE ? "active" : "";
     button_zero.className = editor_status.operation === OP_ZERO ? "active" : "";
+
+    button_draw.className = editor_status.mode === MODE_DRAW ? "active" : "";
+    button_move.className = editor_status.mode === MODE_MOVE ? "active" : "";
 }
 
 // == Event listeners ==
@@ -276,6 +208,15 @@ window.addEventListener("keydown", (event) => {
             editor_status.current_glyph += 1;
             draw();
             update_info();
+        } else if (event.key === "1") {
+            editor_status.operation = OP_XOR;
+            update_buttons();
+        } else if (event.key === "2") {
+            editor_status.operation = OP_ONE;
+            update_buttons();
+        } else if (event.key === "3") {
+            editor_status.operation = OP_ZERO;
+            update_buttons();
         }
     }
 });
@@ -300,7 +241,7 @@ editor_canvas.addEventListener("mousedown", (event) => {
             update_info();
         }
     } else if (keys_pressed.get(" ") || event.button === 1) {
-        editor_status.tmp_mode = MODE_DRAG;
+        editor_status.tmp_mode = MODE_MOVE;
         editor_canvas.classList.add("drag");
     }
 
@@ -312,7 +253,7 @@ editor_canvas.addEventListener("mouseup", (event) => {
     editor_status.old_cx = editor_status.cx;
     editor_status.old_cy = editor_status.cy;
 
-    if (editor_status.tmp_mode === MODE_DRAG) {
+    if (editor_status.tmp_mode === MODE_MOVE) {
         editor_canvas.classList.remove("drag");
     }
     editor_status.tmp_mode = null;
@@ -335,15 +276,48 @@ editor_canvas.addEventListener("mousemove", (event) => {
 });
 
 editor_canvas.addEventListener("wheel", (event) => {
-    editor_status.zoom += event.deltaY * ZOOM_STRENGTH;
+    editor_status.cx /= Math.pow(2, event.deltaY * ZOOM_STRENGTH);
+    editor_status.old_cx = editor_status.cx;
+    editor_status.cy /= Math.pow(2, event.deltaY * ZOOM_STRENGTH);
+    editor_status.old_cy = editor_status.cy;
+    editor_status.zoom -= event.deltaY * ZOOM_STRENGTH;
     draw();
 });
 
 jump_glyph.addEventListener("change", (event) => {
-    if (jump_glyph.value) {
-        editor_status.current_glyph = jump_glyph.value.charCodeAt(0);
+    let match = /^(?:U\+)?([0-9A-F]{4,6})$/i.exec(jump_glyph.value);
+    if (match) {
+        editor_status.current_glyph = Number.parseInt(match[1], 16);
+        draw();
+        update_info();
+        jump_glyph.value = "";
+    } else if (jump_glyph.value) {
+        editor_status.current_glyph = from_utf16(jump_glyph.value);
         draw();
         update_info();
         jump_glyph.value = "";
     }
 });
+
+// Of course fromCharCode doesn't handle utf-16, so we have to manually do the conversion and hope it works
+function to_utf16(codepoint) {
+    if (codepoint > 0xFFFF) {
+        let high = Math.floor((codepoint - 0x10000) / 0x400) + 0xD800;
+        let low = (codepoint - 0x10000) % 0x400 + 0xDC00;
+        return String.fromCharCode(high, low);
+    } else {
+        return String.fromCharCode(codepoint);
+    }
+}
+
+function from_utf16(str) {
+    if (str.length === 2) {
+        let high = str.charCodeAt(0);
+        let low = str.charCodeAt(1);
+        return (high - 0xD800) * 0x400 + low - 0xDC00 + 0x10000;
+    } else if (str.length === 1) {
+        return str.charCodeAt(0);
+    } else {
+        return 0;
+    }
+}
