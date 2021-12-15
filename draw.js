@@ -38,15 +38,21 @@ function draw() {
         return [Math.round(x) + 0.5, Math.round(y) + 0.5];
     }
 
+    function round([x, y]) {
+        return [Math.round(x), Math.round(y)];
+    }
+
     // Utility function for use with fillRect, that accepts a width/height pair instead of x2/y2
     function diff([x1, y1], [x2, y2]) {
         return [x2 - x1, y2 - y1];
     }
 
-    function rect(x1, y1, x2, y2) {
+    function rect(x1, y1, x2, y2, margin = 0) {
+        let [rx1, ry1] = round(editor_pos(x1, y1));
+        let [rx2, ry2] = round(editor_pos(x2, y2));
         return editor_ctx.fillRect(
-            ...offset_half(editor_pos(x1, y1)),
-            ...diff(offset_half(editor_pos(x1, y1)), offset_half(editor_pos(x2, y2)))
+            rx1 + margin, ry1 + margin,
+            rx2 - rx1 - margin * 2 + 1, ry2 - ry1 - margin * 2 + 1
         );
     }
 
@@ -58,12 +64,17 @@ function draw() {
 
     // Draw background
     editor_ctx.fillStyle = COLOR_PIXEL_WHITE;
-    editor_ctx.shadowColor = COLOR_GRAY_DARK + "80";
-    editor_ctx.shadowOffsetX = 0;
-    editor_ctx.shadowOffsetY = editor_status.pixel_size * .25;
-    editor_ctx.shadowBlur = editor_status.pixel_size * .75;
-    rect(0, 0, font_data.width, font_data.height);
-    editor_ctx.shadowColor = "transparent";
+    if (editor_status.pixel_size * Math.max(font_data.width, font_data.height) <= 640) {
+        editor_ctx.shadowColor = COLOR_GRAY_DARK + "80";
+        editor_ctx.shadowOffsetX = 0;
+        editor_ctx.shadowOffsetY = editor_status.pixel_size * .25;
+        editor_ctx.shadowBlur = editor_status.pixel_size * .75;
+        rect(0, 0, font_data.width, font_data.height);
+        editor_ctx.shadowColor = "transparent";
+    } else {
+        // Drop shadows are disabled when zooming in too much (or else it lags the browser)
+        rect(0, 0, font_data.width, font_data.height);
+    }
 
     let current_glyph = font_data.glyphs.get(editor_status.current_glyph);
 
@@ -74,6 +85,21 @@ function draw() {
             for (let x = 0; x < font_data.width; x++) {
                 if (current_glyph[y][x]) {
                     rect(x, y, x + 1, y + 1);
+                }
+                if (editor_status.pixels_selected.has(`${x},${y}`)) {
+                    editor_ctx.fillStyle = COLOR_ALT_DARK;
+                    // TODO: put in a function :)
+                    // Sides
+                    if (!editor_status.pixels_selected.has(`${x-1},${y}`)) rect(x, y, x + 0.25, y + 1);
+                    if (!editor_status.pixels_selected.has(`${x},${y-1}`)) rect(x, y, x + 1, y + 0.25);
+                    if (!editor_status.pixels_selected.has(`${x+1},${y}`)) rect(x + 0.75, y, x + 1, y + 1);
+                    if (!editor_status.pixels_selected.has(`${x},${y+1}`)) rect(x, y + 0.75, x + 1, y + 1);
+                    // Corners
+                    if (!editor_status.pixels_selected.has(`${x-1},${y-1}`)) rect(x, y, x + 0.25, y + 0.25);
+                    if (!editor_status.pixels_selected.has(`${x+1},${y-1}`)) rect(x + 0.75, y, x + 1, y + 0.25);
+                    if (!editor_status.pixels_selected.has(`${x+1},${y+1}`)) rect(x + 0.75, y + 0.75, x + 1, y + 1);
+                    if (!editor_status.pixels_selected.has(`${x-1},${y+1}`)) rect(x, y + 0.75, x + 0.25, y + 1);
+                    editor_ctx.fillStyle = COLOR_PIXEL_BLACK;
                 }
             }
         }

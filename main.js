@@ -5,8 +5,14 @@ const editor_info = document.getElementById("editor-info");
 const button_xor = document.getElementById("button-xor");
 const button_one = document.getElementById("button-one");
 const button_zero = document.getElementById("button-zero");
+
 const button_draw = document.getElementById("button-draw");
 const button_move = document.getElementById("button-move");
+const button_select = document.getElementById("button-select");
+const button_deselect = document.getElementById("button-deselect");
+const button_deselect_all = document.getElementById("button-deselect-all");
+const button_drag = document.getElementById("button-drag");
+
 const jump_glyph = document.getElementById("jump-glyph");
 
 const ZOOM_STRENGTH = 0.001;
@@ -14,11 +20,30 @@ const ZOOM_STRENGTH = 0.001;
 const MODE_NONE = 0;
 const MODE_DRAW = 1;
 const MODE_MOVE = 2;
-const MODE_SELECT = 3;
+const MODE_DRAG = 3;
 
 const OP_XOR = 0;
 const OP_ONE = 1;
 const OP_ZERO = 2;
+const OP_SELECT = 3;
+const OP_DESELECT = 4;
+
+const HOTKEYS = new Map();
+HOTKEYS.set("1", () => editor_status.operation = OP_XOR);
+HOTKEYS.set("2", () => editor_status.operation = OP_ONE);
+HOTKEYS.set("3", () => editor_status.operation = OP_ZERO);
+HOTKEYS.set("4", () => editor_status.operation = OP_SELECT);
+HOTKEYS.set("5", () => editor_status.operation = OP_DESELECT);
+HOTKEYS.set("d", () => editor_status.persistent_mode = MODE_DRAW);
+HOTKEYS.set("D", () => {
+    editor_status.pixels_selected = new Set()
+    button_deselect_all.className = "active";
+    setTimeout(() => {
+        button_deselect_all.className = "";
+    }, 200);
+});
+HOTKEYS.set("t", () => editor_status.persistent_mode = MODE_MOVE);
+HOTKEYS.set("g", () => editor_status.persistent_mode = MODE_DRAG);
 
 let unicode_data = null;
 let unicode_blocks = null;
@@ -64,7 +89,14 @@ let editor_status = {
         return this._operation;
     },
     pixels_covered: new Set(),
-    pixels_selected: new Set(),
+    _pixels_selected: new Set(),
+    get pixels_selected() {
+        return this.pixels_selected_tmp ?? this._pixels_selected;
+    },
+    set pixels_selected(value) {
+        this._pixels_selected = value;
+    },
+    pixels_selected_tmp: null,
 }
 
 let font_data = {
@@ -126,11 +158,27 @@ function resize() {
     draw();
 }
 
-function editor_place_pixel(x, y) {
-    let px = Math.floor((x - editor_status.cx - (editor_canvas.width - font_data.width * editor_status.pixel_size) / 2) / editor_status.pixel_size);
-    let py = Math.floor((y - editor_status.cy - (editor_canvas.height - font_data.height * editor_status.pixel_size) / 2) / editor_status.pixel_size);
+function editor_get_pixel(x, y) {
+    return [
+        Math.floor(
+            (x - editor_status.cx - (editor_canvas.width - font_data.width * editor_status.pixel_size) / 2)
+            / editor_status.pixel_size
+        ),
+        Math.floor(
+            (y - editor_status.cy - (editor_canvas.height - font_data.height * editor_status.pixel_size) / 2)
+            / editor_status.pixel_size
+        ),
+    ];
+}
 
-    if (px >= 0 && py >= 0 && px < font_data.width && py < font_data.height && !editor_status.pixels_covered.has(`${px},${py}`)) {
+function editor_pixel_inside(px, py) {
+    return px >= 0 && py >= 0 && px < font_data.width && py < font_data.height;
+}
+
+function editor_place_pixel(x, y) {
+    let [px, py] = editor_get_pixel(x, y);
+
+    if (editor_pixel_inside(px, py) && !editor_status.pixels_covered.has(`${px},${py}`)) {
         editor_status.pixels_covered.add(`${px},${py}`);
         current_glyph = font_data.glyphs.get(editor_status.current_glyph);
         if (!current_glyph) {
@@ -143,8 +191,41 @@ function editor_place_pixel(x, y) {
             current_glyph[py][px] = true;
         } else if (editor_status.operation === OP_ZERO) {
             current_glyph[py][px] = false;
+        } else if (editor_status.operation === OP_SELECT) {
+            editor_status.pixels_selected.add(`${px},${py}`);
+        } else if (editor_status.operation === OP_DESELECT) {
+            editor_status.pixels_selected.delete(`${px},${py}`);
         }
     }
+}
+
+function editor_apply_drag(x, y) {
+    editor_status.pixels_selected_tmp = null;
+    let dx = Math.floor((x - editor_status.mouse_down_x) / editor_status.pixel_size);
+    let dy = Math.floor((y - editor_status.mouse_down_y) / editor_status.pixel_size);
+    let current_glyph = font_data.glyphs.get(editor_status.current_glyph);
+
+    let new_glyph = [...current_glyph.map(row => [...row])];
+    let new_selection = new Set();
+
+    for (let pixel of editor_status._pixels_selected) {
+        let [px, py] = pixel.split(",").map(x => +x);
+        new_glyph[py][px] = false;
+    }
+
+    for (let pixel of editor_status._pixels_selected) {
+        let [px, py] = pixel.split(",").map(x => +x);
+
+        if (editor_pixel_inside(px + dx, py + dy)) {
+            new_selection.add(`${px + dx},${py + dy}`);
+            new_glyph[py + dy][px + dx] = current_glyph[py][px];
+        }
+    }
+
+    font_data.glyphs.set(editor_status.current_glyph, new_glyph);
+    editor_status.pixels_selected = new_selection;
+
+    draw();
 }
 
 function editor_click(x, y) {
@@ -161,6 +242,14 @@ function editor_drag(x, y) {
         editor_status.cy = editor_status.old_cy + y - editor_status.mouse_down_y;
     } else if (editor_status.mode === MODE_DRAW) {
         editor_place_pixel(x, y);
+    } else if (editor_status.mode === MODE_DRAG) {
+        editor_status.pixels_selected_tmp = new Set();
+        let dx = Math.floor((x - editor_status.mouse_down_x) / editor_status.pixel_size);
+        let dy = Math.floor((y - editor_status.mouse_down_y) / editor_status.pixel_size);
+        for (let pixel of editor_status._pixels_selected) {
+            let [px, py] = pixel.split(",").map(x => +x);
+            editor_status.pixels_selected_tmp.add(`${px + dx},${py + dy}`);
+        }
     }
     draw();
 }
@@ -183,13 +272,17 @@ function update_info() {
     editor_info.innerText = info_text;
 }
 
+// TODO: use arrays or smth
 function update_buttons() {
     button_xor.className = editor_status.operation === OP_XOR ? "active" : "";
     button_one.className = editor_status.operation === OP_ONE ? "active" : "";
     button_zero.className = editor_status.operation === OP_ZERO ? "active" : "";
+    button_select.className = editor_status.operation === OP_SELECT ? "active" : "";
+    button_deselect.className = editor_status.operation === OP_DESELECT ? "active" : "";
 
     button_draw.className = editor_status.mode === MODE_DRAW ? "active" : "";
     button_move.className = editor_status.mode === MODE_MOVE ? "active" : "";
+    button_drag.className = editor_status.mode === MODE_DRAG ? "active" : "";
 }
 
 // == Event listeners ==
@@ -208,14 +301,9 @@ window.addEventListener("keydown", (event) => {
             editor_status.current_glyph += 1;
             draw();
             update_info();
-        } else if (event.key === "1") {
-            editor_status.operation = OP_XOR;
-            update_buttons();
-        } else if (event.key === "2") {
-            editor_status.operation = OP_ONE;
-            update_buttons();
-        } else if (event.key === "3") {
-            editor_status.operation = OP_ZERO;
+        } else if (HOTKEYS.get(event.key)) {
+            HOTKEYS.get(event.key)();
+            draw();
             update_buttons();
         }
     }
@@ -250,6 +338,11 @@ editor_canvas.addEventListener("mousedown", (event) => {
 
 editor_canvas.addEventListener("mouseup", (event) => {
     editor_status.mouse_down = false;
+
+    if (editor_status.mode === MODE_DRAG) {
+        editor_apply_drag(event.clientX, event.clientY, event);
+    }
+
     editor_status.old_cx = editor_status.cx;
     editor_status.old_cy = editor_status.cy;
 
@@ -293,6 +386,9 @@ jump_glyph.addEventListener("change", (event) => {
         jump_glyph.value = "";
     } else if (jump_glyph.value) {
         editor_status.current_glyph = from_utf16(jump_glyph.value);
+        if (editor_status.current_glyph < 0 || editor_status.current_glyph > 0x1FFFF) {
+            editor_status.current_glyph = jump_glyph.value.charCodeAt(0);
+        }
         draw();
         update_info();
         jump_glyph.value = "";
