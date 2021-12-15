@@ -1,3 +1,26 @@
+Array.prototype.findLastIndex = function(predicate) {
+    let l = this.length;
+    while (l--) {
+        if (predicate(this[l], l, this)) return l;
+    }
+    return -1;
+}
+
+Array.prototype.findSecondLastIndex = function(predicate) {
+    let l = this.length;
+    let first = true;
+    while (l--) {
+        if (predicate(this[l], l, this)) {
+            if (first) {
+                first = false;
+            } else {
+                return l;
+            }
+        }
+    }
+    return -1;
+}
+
 const editor_canvas = document.getElementById("editor-canvas");
 const editor_ctx = editor_canvas.getContext("2d");
 const editor_info = document.getElementById("editor-info");
@@ -103,6 +126,7 @@ let font_data = {
     width: 10,
     height: 14,
     glyphs: new Map(),
+    history: [],
 }
 
 let keys_pressed = new Map();
@@ -158,6 +182,10 @@ function resize() {
     draw();
 }
 
+function new_glyph(height = font_data.height, width = font_data.width) {
+    return new Array(height).fill(null).map(_ => new Array(width).fill(false));
+}
+
 function editor_get_pixel(x, y) {
     return [
         Math.floor(
@@ -182,7 +210,7 @@ function editor_place_pixel(x, y) {
         editor_status.pixels_covered.add(`${px},${py}`);
         current_glyph = font_data.glyphs.get(editor_status.current_glyph);
         if (!current_glyph) {
-            current_glyph = new Array(font_data.height).fill(null).map(_ => new Array(font_data.width).fill(false));
+            current_glyph = new_glyph();
             font_data.glyphs.set(editor_status.current_glyph, current_glyph);
         }
         if (editor_status.operation === OP_XOR) {
@@ -205,7 +233,7 @@ function editor_apply_drag(x, y) {
     let dy = Math.floor((y - editor_status.mouse_down_y) / editor_status.pixel_size);
     let current_glyph = font_data.glyphs.get(editor_status.current_glyph);
 
-    let new_glyph = [...current_glyph.map(row => [...row])];
+    let new_glyph = current_glyph.map(row => [...row]);
     let new_selection = new Set();
 
     for (let pixel of editor_status._pixels_selected) {
@@ -252,6 +280,47 @@ function editor_drag(x, y) {
         }
     }
     draw();
+}
+
+function editor_commit_history() {
+    // Check if the current glyph is different from the previous glyph in the history
+    let current_glyph = font_data.glyphs.get(editor_status.current_glyph);
+    function should_commit() {
+        let last_glyph = font_data.history.findLastIndex(entry => entry.id === editor_status.current_glyph);
+        if (current_glyph && last_glyph !== -1) {
+            last_glyph = font_data.history[last_glyph];
+            for (let y = 0; y < font_data.height; y++) {
+                for (let x = 0; x < font_data.width; x++) {
+                    if (last_glyph.data[y][x] != current_glyph[y][x]) {
+                        return true;
+                    }
+                }
+            }
+        } else if (current_glyph) return true;
+
+        return false;
+    }
+
+    if (should_commit()) {
+        font_data.history.push({
+            id: editor_status.current_glyph,
+            data: current_glyph.map(row => [...row]),
+        });
+    }
+}
+
+function editor_undo() {
+    let last_glyph = font_data.history.findLastIndex(entry => entry.id === editor_status.current_glyph);
+    let second_last_glyph = font_data.history.findSecondLastIndex(entry => entry.id === editor_status.current_glyph);
+    if (second_last_glyph !== -1) {
+        font_data.glyphs.set(editor_status.current_glyph, font_data.history[second_last_glyph].data);
+        font_data.history.splice(last_glyph, 1);
+        draw();
+    } else if (last_glyph !== -1) {
+        font_data.glyphs.set(editor_status.current_glyph, new_glyph());
+        font_data.history.splice(last_glyph, 1);
+        draw();
+    }
 }
 
 function update_info() {
@@ -301,10 +370,12 @@ window.addEventListener("keydown", (event) => {
             editor_status.current_glyph += 1;
             draw();
             update_info();
-        } else if (HOTKEYS.get(event.key)) {
+        } else if (HOTKEYS.get(event.key) && !event.altKey && !event.ctrlKey && !event.metaKey) {
             HOTKEYS.get(event.key)();
             draw();
             update_buttons();
+        } else if (event.key === "z" && event.ctrlKey) {
+            editor_undo();
         }
     }
 });
@@ -341,6 +412,9 @@ editor_canvas.addEventListener("mouseup", (event) => {
 
     if (editor_status.mode === MODE_DRAG) {
         editor_apply_drag(event.clientX, event.clientY, event);
+        editor_commit_history();
+    } else if (editor_status.mode === MODE_DRAW) {
+        editor_commit_history();
     }
 
     editor_status.old_cx = editor_status.cx;

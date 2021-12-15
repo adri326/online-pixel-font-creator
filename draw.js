@@ -150,11 +150,13 @@ function draw() {
         }
 
         let current_glyph = font_data.glyphs.get(editor_status.current_glyph + offset);
+        let drew_pixel = false;
         if (current_glyph) {
             editor_ctx.fillStyle = COLOR_NEIGHBORS;
             for (let dy = 0; dy < font_data.height; dy++) {
                 for (let dx = 0; dx < font_data.width; dx++) {
                     if (!current_glyph[dy][dx]) continue;
+                    drew_pixel = true;
                     editor_ctx.fillRect(
                         x + dx * PREVIEW_MULT,
                         y + dy * PREVIEW_MULT,
@@ -163,7 +165,8 @@ function draw() {
                     );
                 }
             }
-        } else {
+        }
+        if (!current_glyph || !drew_pixel) {
             editor_ctx.fillStyle = COLOR_NEIGHBORS_TEXT;
             editor_ctx.fillText(
                 to_utf16(editor_status.current_glyph + offset),

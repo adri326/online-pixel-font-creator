@@ -13,6 +13,7 @@
     <div id="editor">
         <canvas id="editor-canvas">Sorry, your browser needs to support canvases and javascript to see this!</canvas>
         <div id="editor-toolbox">
+            <button id="button-undo" onclick="editor_undo();">Undo</button>
             <span>Operation:</span>
             <button id="button-xor" onclick="editor_status.operation = OP_XOR;" class="active">XOR</button>
             <button id="button-one" onclick="editor_status.operation = OP_ONE;">ONE</button>
