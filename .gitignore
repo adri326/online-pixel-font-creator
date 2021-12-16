@@ -1,0 +1,8 @@
+*.png~
+*.ttf
+settings.json
+
+# Temporary
+charset.txt
+raw.png
+raw.png.kra

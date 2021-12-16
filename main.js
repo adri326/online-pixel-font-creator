@@ -409,7 +409,7 @@ editor_canvas.addEventListener("mousedown", (event) => {
     } else if (event.clientY >= editor_canvas.height - (font_data.height + 2) * PREVIEW_MULT) {
         editor_status.tmp_mode = MODE_NONE;
         let n_chars = Math.floor(editor_canvas.width / (font_data.width + 2) / PREVIEW_MULT);
-        let offset = Math.floor(event.clientX / (font_data.width + 2) / PREVIEW_MULT) - Math.floor(n_chars / 2);
+        let offset = Math.floor(event.clientX / (font_data.width + 2) / PREVIEW_MULT) - Math.round(n_chars / 2);
         if (offset !== 0 && editor_status.current_glyph + offset >= 0 && editor_status.current_glyph + offset <= 0x1FFFF) {
             editor_status.current_glyph += offset;
             update_info();
@@ -496,7 +496,7 @@ button_resize.addEventListener("click", (event) => {
     font_data.width = width;
     font_data.height = height;
 
-    for (let glyph of font_data.glyphs) {
+    for (let [id, glyph] of font_data.glyphs) {
         while (glyph.length > height) glyph.pop();
         for (let row of glyph) {
             while (row.length > width) row.pop();
@@ -504,6 +504,8 @@ button_resize.addEventListener("click", (event) => {
         }
         while (glyph.length < height) glyph.push(new Array(width).fill(false));
     }
+
+    font_data.history = []; // Sorry
 
     draw();
 });
