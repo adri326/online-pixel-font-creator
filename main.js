@@ -1,3 +1,7 @@
+import {draw, PREVIEW_MULT} from "./draw.js";
+import {attach_resizer} from "./resize.js";
+import {serialize_font, deserialize_font} from "./convert.js";
+
 Array.prototype.findLastIndex = function(predicate) {
     let l = this.length;
     while (l--) {
@@ -23,8 +27,8 @@ Array.prototype.findSecondLastIndex = function(predicate) {
 
 const manipulate = document.getElementById("manipulate");
 
-const editor_canvas = document.getElementById("editor-canvas");
-const editor_ctx = editor_canvas.getContext("2d");
+export const editor_canvas = document.getElementById("editor-canvas");
+export const editor_ctx = editor_canvas.getContext("2d");
 const editor_info = document.getElementById("editor-info");
 
 const button_xor = document.getElementById("button-xor");
@@ -48,6 +52,10 @@ const input_ascend = document.getElementById("input-ascend");
 const input_descend = document.getElementById("input-descend");
 const input_baseline = document.getElementById("input-baseline");
 const input_spacing = document.getElementById("input-spacing");
+const button_save_local = document.getElementById("button-save");
+const button_load_local = document.getElementById("button-load");
+const button_download = document.getElementById("button-download");
+const button_upload = document.getElementById("button-upload");
 
 const ZOOM_STRENGTH = 0.001;
 
@@ -82,7 +90,7 @@ HOTKEYS.set("g", () => editor_status.persistent_mode = MODE_DRAG);
 let unicode_data = null;
 let unicode_blocks = null;
 
-let editor_status = {
+export const editor_status = {
     current_glyph: 65,
     get pixel_size() {
         return Math.pow(2, this.zoom);
@@ -131,9 +139,10 @@ let editor_status = {
         this._pixels_selected = value;
     },
     pixels_selected_tmp: null,
-}
+};
+window.editor_status = editor_status;
 
-let font_data = {
+export let font_data = {
     width: +(input_width.value || 8),
     height: +(input_height.value || 10),
     baseline: +(input_baseline.value || 8),
@@ -142,7 +151,8 @@ let font_data = {
     spacing: +(input_spacing.value || 1),
     glyphs: new Map(),
     history: [],
-}
+};
+window.font_data = font_data;
 
 let keys_pressed = new Map();
 
@@ -190,7 +200,7 @@ Promise.all(loading_promises).then(() => {
     update_info();
 });
 
-function resize() {
+export function resize() {
     editor_canvas.width = editor_canvas.clientWidth;
     editor_canvas.height = editor_canvas.clientHeight;
 
@@ -223,7 +233,7 @@ function editor_place_pixel(x, y) {
 
     if (editor_pixel_inside(px, py) && !editor_status.pixels_covered.has(`${px},${py}`)) {
         editor_status.pixels_covered.add(`${px},${py}`);
-        current_glyph = font_data.glyphs.get(editor_status.current_glyph);
+        let current_glyph = font_data.glyphs.get(editor_status.current_glyph);
         if (!current_glyph) {
             current_glyph = new_glyph();
             font_data.glyphs.set(editor_status.current_glyph, current_glyph);
@@ -369,8 +379,31 @@ function update_buttons() {
     button_drag.className = editor_status.mode === MODE_DRAG ? "active" : "";
 }
 
+function load_font() {
+    let raw_data = window.localStorage.getItem("font_data");
+    if (raw_data) {
+        font_data = deserialize_font(raw_data);
+
+        input_width.value = font_data.width;
+        input_height.value = font_data.height;
+
+        input_baseline.value = font_data.baseline;
+        input_ascend.value = font_data.ascend;
+        input_descend.value = font_data.descend;
+        input_spacing.value = font_data.spacing;
+    }
+    draw();
+}
+
+function save_font() {
+    window.localStorage.setItem("font_data", serialize_font(font_data));
+}
+
 // == Event listeners ==
-resize();
+setTimeout(() => {
+    resize();
+    load_font();
+}, 10);
 window.addEventListener("resize", resize);
 
 window.addEventListener("keydown", (event) => {
@@ -531,8 +564,19 @@ input_descend.addEventListener("keyup", update_spacing);
 input_spacing.addEventListener("change", update_spacing);
 input_spacing.addEventListener("keyup", update_spacing);
 
+button_save_local.addEventListener("click", save_font);
+button_load_local.addEventListener("click", load_font);
+
+button_download.addEventListener("click", () => {
+    let url = window.URL.createObjectURL(new Blob([serialize_font(font_data)], {type: "text/plain"}));
+    let a = document.createElement("a");
+    a.href = url;
+    a.download = "font.pfs";
+    a.click();
+});
+
 // Of course fromCharCode doesn't handle utf-16, so we have to manually do the conversion and hope it works
-function to_utf16(codepoint) {
+export function to_utf16(codepoint) {
     if (codepoint > 0xFFFF) {
         let high = Math.floor((codepoint - 0x10000) / 0x400) + 0xD800;
         let low = (codepoint - 0x10000) % 0x400 + 0xDC00;
@@ -542,7 +586,7 @@ function to_utf16(codepoint) {
     }
 }
 
-function from_utf16(str) {
+export function from_utf16(str) {
     if (str.length === 2) {
         let high = str.charCodeAt(0);
         let low = str.charCodeAt(1);

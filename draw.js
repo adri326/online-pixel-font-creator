@@ -1,6 +1,12 @@
-const PREVIEW_MULT = 2;
-const CURRENT_SIZE = 128;
-const CURRENT_PADDING = 16;
+import {
+    editor_status, font_data,
+    editor_ctx, editor_canvas,
+    from_utf16, to_utf16,
+} from "./main.js";
+
+export const PREVIEW_MULT = 2;
+export const CURRENT_SIZE = 128;
+export const CURRENT_PADDING = 16;
 
 const COLOR_PRIMARY_DARK = "#5E0B15"
 const COLOR_PRIMARY_LIGHT = "#90323D"
@@ -22,7 +28,7 @@ const COLOR_NEIGHBORS_CURRENT_BG = COLOR_WHITE;
 const COLOR_NEIGHBORS = COLOR_PRIMARY_LIGHT;
 const COLOR_NEIGHBORS_TEXT = COLOR_GRAY_DARK;
 
-function draw() {
+export function draw() {
     editor_ctx.fillStyle = COLOR_BG;
     editor_ctx.fillRect(0, 0, editor_canvas.width, editor_canvas.height);
 
@@ -168,6 +174,8 @@ function draw() {
                 (font_data.height + 2) * PREVIEW_MULT
             );
         }
+
+        if (editor_status.current_glyph + offset < 0 || editor_status.current_glyph + offset > 0x1FFFF) continue;
 
         let current_glyph = font_data.glyphs.get(editor_status.current_glyph + offset);
         let drew_pixel = false;

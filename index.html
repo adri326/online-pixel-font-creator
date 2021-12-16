@@ -6,9 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Pixel Font creator</title>
     <link rel="stylesheet" href="./style.css">
-    <script src="draw.js"></script>
-    <script src="main.js" defer></script>
-    <script src="resize.js" defer></script>
+    <script src="draw.js" type="module"></script>
+    <script src="base64.js" type="module"></script>
+    <script src="convert.js" type="module"></script>
+    <script src="main.js" defer type="module"></script>
+    <script src="resize.js" defer type="module"></script>
 </head>
 <body>
     <div id="editor">
@@ -45,6 +47,13 @@
                 <span>Ascend: <input type="text" id="input-ascend" class="small" placeholder="7"></span>
                 <span>Descend: <input type="text" id="input-descend" class="small" placeholder="-1"></span>
                 <span>Spacing: <input type="text" id="input-spacing" class="small" placeholder="1"></span>
+            </div>
+            <h2>Saving/loading</h2>
+            <div>
+                <button id="button-save">Save (browser)</button>
+                <button id="button-load">Load (browser)</button>
+                <button id="button-download">Download</button>
+                <!-- <button id="button-upload">Upload</button> -->
             </div>
         </div>
         <div id="preview">This is the preview (TODO)!</div>

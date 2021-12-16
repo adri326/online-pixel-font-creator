@@ -1,6 +1,8 @@
+import {resize} from "./main.js";
+
 const resizer = document.getElementById("resizer");
 
-function attach_resizer(resizer, min = 0, max = 1, horizontal = true, callback = () => {}) {
+export function attach_resizer(resizer, min = 0, max = 1, horizontal = true, callback = () => {}) {
     const parent_elem = resizer.parentNode;
     const left_elem = resizer.previousElementSibling;
     const right_elem = resizer.nextElementSibling;
