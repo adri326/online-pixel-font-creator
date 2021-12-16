@@ -142,6 +142,8 @@ export function draw() {
     editor_ctx.lineTo(...offset_half(editor_pos(font_data.width, font_data.baseline - font_data.descend)));
     editor_ctx.moveTo(...offset_half(editor_pos(0, font_data.baseline - font_data.ascend)));
     editor_ctx.lineTo(...offset_half(editor_pos(font_data.width, font_data.baseline - font_data.ascend)));
+    editor_ctx.moveTo(...offset_half(editor_pos(font_data.em_size, 0)));
+    editor_ctx.lineTo(...offset_half(editor_pos(font_data.em_size, font_data.height)));
 
     editor_ctx.lineWidth = 3;
     editor_ctx.strokeStyle = COLOR_GRID;

@@ -11,6 +11,7 @@
     <script src="convert.js" type="module"></script>
     <script src="main.js" defer type="module"></script>
     <script src="resize.js" defer type="module"></script>
+    <script src="https://cdn.jsdelivr.net/npm/opentype.js@latest/dist/opentype.min.js"></script>
 </head>
 <body>
     <div id="editor">
@@ -47,12 +48,14 @@
                 <span>Ascend: <input type="text" id="input-ascend" class="small" placeholder="7"></span>
                 <span>Descend: <input type="text" id="input-descend" class="small" placeholder="-1"></span>
                 <span>Spacing: <input type="text" id="input-spacing" class="small" placeholder="1"></span>
+                <span>Em Size: <input type="text" id="input-em-size" class="small" placeholder="8"></span>
             </div>
             <h2>Saving/loading</h2>
             <div>
                 <button id="button-save">Save (browser)</button>
                 <button id="button-load">Load (browser)</button>
                 <button id="button-download">Download</button>
+                <button id="button-download-otf">Download (OTF)</button>
                 <!-- <button id="button-upload">Upload</button> -->
             </div>
         </div>

@@ -1,5 +1,6 @@
 *.png~
 *.ttf
+*.otf
 settings.json
 
 # Temporary

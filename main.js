@@ -1,6 +1,6 @@
 import {draw, PREVIEW_MULT} from "./draw.js";
 import {attach_resizer} from "./resize.js";
-import {serialize_font, deserialize_font} from "./convert.js";
+import {serialize_font, deserialize_font, generate_truetype} from "./convert.js";
 
 Array.prototype.findLastIndex = function(predicate) {
     let l = this.length;
@@ -52,10 +52,12 @@ const input_ascend = document.getElementById("input-ascend");
 const input_descend = document.getElementById("input-descend");
 const input_baseline = document.getElementById("input-baseline");
 const input_spacing = document.getElementById("input-spacing");
+const input_em_size = document.getElementById("input-em-size");
 const button_save_local = document.getElementById("button-save");
 const button_load_local = document.getElementById("button-load");
 const button_download = document.getElementById("button-download");
-const button_upload = document.getElementById("button-upload");
+const button_download_otf = document.getElementById("button-download-otf");
+// const button_upload = document.getElementById("button-upload");
 
 const ZOOM_STRENGTH = 0.001;
 
@@ -87,8 +89,8 @@ HOTKEYS.set("D", () => {
 HOTKEYS.set("t", () => editor_status.persistent_mode = MODE_MOVE);
 HOTKEYS.set("g", () => editor_status.persistent_mode = MODE_DRAG);
 
-let unicode_data = null;
-let unicode_blocks = null;
+export let unicode_data = null;
+export let unicode_blocks = null;
 
 export const editor_status = {
     current_glyph: 65,
@@ -149,10 +151,10 @@ export let font_data = {
     ascend: +(input_ascend.value || 7),
     descend: +(input_descend.value || -1),
     spacing: +(input_spacing.value || 1),
+    em_size: +(input_em_size.value || 8),
     glyphs: new Map(),
     history: [],
 };
-window.font_data = font_data;
 
 let keys_pressed = new Map();
 
@@ -403,6 +405,7 @@ function save_font() {
 setTimeout(() => {
     resize();
     load_font();
+    window.font_data = font_data;
 }, 10);
 window.addEventListener("resize", resize);
 
@@ -544,10 +547,11 @@ button_resize.addEventListener("click", (event) => {
 });
 
 function update_spacing() {
-    if (!isNaN(+input_baseline.value)) font_data.baseline = +input_baseline.value;
-    if (!isNaN(+input_ascend.value)) font_data.ascend = +input_ascend.value;
-    if (!isNaN(+input_descend.value)) font_data.descend = +input_descend.value;
-    if (!isNaN(+input_spacing.value)) font_data.spacing = +input_spacing.value;
+    if (input_baseline.value && !isNaN(+input_baseline.value)) font_data.baseline = +input_baseline.value;
+    if (input_ascend.value && !isNaN(+input_ascend.value)) font_data.ascend = +input_ascend.value;
+    if (input_descend.value && !isNaN(+input_descend.value)) font_data.descend = +input_descend.value;
+    if (input_spacing.value && !isNaN(+input_spacing.value)) font_data.spacing = +input_spacing.value;
+    if (input_em_size.value && !isNaN(+input_em_size.value)) font_data.em_size = +input_em_size.value;
 
     draw();
 }
@@ -564,6 +568,9 @@ input_descend.addEventListener("keyup", update_spacing);
 input_spacing.addEventListener("change", update_spacing);
 input_spacing.addEventListener("keyup", update_spacing);
 
+input_em_size.addEventListener("change", update_spacing);
+input_em_size.addEventListener("keyup", update_spacing);
+
 button_save_local.addEventListener("click", save_font);
 button_load_local.addEventListener("click", load_font);
 
@@ -573,6 +580,10 @@ button_download.addEventListener("click", () => {
     a.href = url;
     a.download = "font.pfs";
     a.click();
+});
+
+button_download_otf.addEventListener("click", () => {
+    generate_truetype(font_data).download();
 });
 
 // Of course fromCharCode doesn't handle utf-16, so we have to manually do the conversion and hope it works
