@@ -18,18 +18,18 @@
     <div id="editor">
         <canvas id="editor-canvas">Sorry, your browser needs to support canvases and javascript to see this!</canvas>
         <div id="editor-toolbox">
-            <button id="button-undo" onclick="editor_undo();">Undo</button>
+            <button id="button-undo" onclick="editor.editor_undo();">Undo</button>
             <span>Operation:</span>
-            <button id="button-xor" onclick="editor_status.operation = OP_XOR;" class="active">XOR</button>
-            <button id="button-one" onclick="editor_status.operation = OP_ONE;">ONE</button>
-            <button id="button-zero" onclick="editor_status.operation = OP_ZERO;">ZERO</button>
-            <button id="button-select" onclick="editor_status.operation = OP_SELECT;">SEL</button>
-            <button id="button-deselect" onclick="editor_status.operation = OP_DESELECT;">DESEL</button>
+            <button id="button-xor" onclick="editor_status.operation = editor.OP_XOR;" class="active">XOR</button>
+            <button id="button-one" onclick="editor_status.operation = editor.OP_ONE;">ONE</button>
+            <button id="button-zero" onclick="editor_status.operation = editor.OP_ZERO;">ZERO</button>
+            <button id="button-select" onclick="editor_status.operation = editor.OP_SELECT;">SEL</button>
+            <button id="button-deselect" onclick="editor_status.operation = editor.OP_DESELECT;">DESEL</button>
             <span>Tool:</span>
-            <button id="button-draw" onclick="editor_status.persistent_mode = MODE_DRAW;" class="active">Draw</button>
-            <button id="button-move" onclick="editor_status.persistent_mode = MODE_MOVE;">Pan</button>
+            <button id="button-draw" onclick="editor_status.persistent_mode = editor.MODE_DRAW;" class="active">Draw</button>
+            <button id="button-move" onclick="editor_status.persistent_mode = editor.MODE_MOVE;">Pan</button>
             <button id="button-deselect-all" onclick="editor_status.pixels_selected = new Set(); draw();">Deselect all</button>
-            <button id="button-drag" onclick="editor_status.persistent_mode = MODE_DRAG;">Drag</button>
+            <button id="button-drag" onclick="editor_status.persistent_mode = editor.MODE_DRAG;">Drag</button>
             <input type="text" placeholder="Jump to glyph..." id="jump-glyph">
             <span id="editor-info" class="loading">Loading information...</span>
         </div>

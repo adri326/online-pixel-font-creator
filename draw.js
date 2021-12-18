@@ -1,8 +1,5 @@
-import {
-    editor_status, font_data,
-    editor_ctx, editor_canvas,
-    from_utf16, to_utf16,
-} from "./main.js";
+import {font_data, from_utf16, to_utf16} from "./main.js";
+import {editor_status, editor_ctx, editor_canvas} from "./editor.js";
 
 export const PREVIEW_MULT = 2;
 export const CURRENT_SIZE = 128;
