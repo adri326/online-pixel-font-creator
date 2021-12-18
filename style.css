@@ -150,6 +150,8 @@ button, .button {
     display: flex;
     flex-direction: column;
     align-items: stretch;
+    height: 100vh;
+    justify-content: stretch;
 }
 
 #resizer {
@@ -217,12 +219,6 @@ button, .button {
     background-color: var(--color-alt-dark);
 }
 
-#preview {
-    background: var(--color-white);
-    color: var(--color-primary-dark);
-    flex-grow: 1;
-    padding: 0.5em 1em;
-}
 
 h2 {
     margin: 0.5em 0;
@@ -323,4 +319,30 @@ h2 {
 
 .flex-end {
     justify-content: flex-end;
+}
+
+#preview {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+
+    background: var(--color-white);
+    color: var(--color-primary-dark);
+    flex-grow: 1;
+    flex-shrink: 1;
+}
+
+#preview-prompt {
+    flex-grow: 0;
+    flex-shrink: 0.5;
+    height: 4em;
+    margin: 0.5em 1em;
+    resize: none;
+}
+
+#preview-canvas {
+    flex-grow: 1;
+    flex-shrink: 1;
+    height: 4em;
 }

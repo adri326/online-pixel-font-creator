@@ -2,6 +2,7 @@ import {draw, PREVIEW_MULT} from "./draw.js";
 import {attach_resizer} from "./resize.js";
 import {serialize_font, deserialize_font, generate_truetype} from "./convert.js";
 import * as editor from "./editor.js";
+import * as preview from "./preview.js";
 window.editor = editor;
 
 Array.prototype.findLastIndex = function(predicate) {
@@ -114,10 +115,14 @@ export function resize() {
     editor.editor_canvas.width = editor.editor_canvas.clientWidth;
     editor.editor_canvas.height = editor.editor_canvas.clientHeight;
 
+    preview.preview_canvas.width = preview.preview_canvas.clientWidth;
+    preview.preview_canvas.height = preview.preview_canvas.clientHeight;
+
     draw();
+    preview.draw();
 }
 
-function new_glyph(height = font_data.height, width = font_data.width) {
+export function new_glyph(height = font_data.height, width = font_data.width) {
     return new Array(height).fill(null).map(_ => new Array(width).fill(false));
 }
 
@@ -135,6 +140,7 @@ function load_font() {
         input_spacing.value = font_data.spacing;
     }
     draw();
+    preview.draw();
 }
 
 function save_font() {
@@ -166,7 +172,7 @@ window.addEventListener("keydown", (event) => {
             draw();
             editor.update_buttons();
         } else if (event.key === "z" && event.ctrlKey) {
-            editor_undo();
+            editor.editor_undo();
         }
     }
 });
@@ -198,6 +204,7 @@ button_resize.addEventListener("click", (event) => {
     font_data.history = []; // Sorry
 
     draw();
+    preview.draw();
 });
 
 function update_spacing() {
@@ -208,6 +215,7 @@ function update_spacing() {
     if (input_em_size.value && !isNaN(+input_em_size.value)) font_data.em_size = +input_em_size.value;
 
     draw();
+    preview.draw();
 }
 
 input_baseline.addEventListener("change", update_spacing);
@@ -275,4 +283,19 @@ export function from_utf16(str) {
     } else {
         return 0;
     }
+}
+
+export function parse_utf16(str) {
+    let res = [];
+    for (let n = 0; n < str.length; n++) {
+        let current = str.charCodeAt(n);
+        if (current >= 0xD800 && current <= 0xDFFF) {
+            n++;
+            let low = str.charCodeAt(n);
+            res.push((current - 0xD800) * 0x400 + low - 0xDC00 + 0x10000);
+        } else {
+            res.push(current);
+        }
+    }
+    return res;
 }

@@ -1,6 +1,6 @@
-import {to_utf16, from_utf16, unicode_data, unicode_blocks, keys_pressed} from "./main.js";
+import {to_utf16, from_utf16, unicode_data, unicode_blocks, keys_pressed, new_glyph} from "./main.js";
 import {draw, PREVIEW_MULT} from "./draw.js";
-
+import * as preview from "./preview.js";
 
 export const editor_canvas = document.getElementById("editor-canvas");
 export const editor_ctx = editor_canvas.getContext("2d");
@@ -130,6 +130,8 @@ function editor_place_pixel(x, y) {
             current_glyph = new_glyph();
             font_data.glyphs.set(editor_status.current_glyph, current_glyph);
         }
+        let previous = current_glyph[py][px];
+
         if (editor_status.operation === OP_XOR) {
             current_glyph[py][px] = !current_glyph[py][px];
         } else if (editor_status.operation === OP_ONE) {
@@ -138,10 +140,16 @@ function editor_place_pixel(x, y) {
             current_glyph[py][px] = false;
         } else if (editor_status.operation === OP_SELECT) {
             editor_status.pixels_selected.add(`${px},${py}`);
+            return true; // Not efficient but eh
         } else if (editor_status.operation === OP_DESELECT) {
             editor_status.pixels_selected.delete(`${px},${py}`);
+            return true;
         }
+
+        return previous !== current_glyph[py][px];
     }
+
+    return false;
 }
 
 function editor_apply_drag(x, y) {
@@ -170,23 +178,30 @@ function editor_apply_drag(x, y) {
     font_data.glyphs.set(editor_status.current_glyph, new_glyph);
     editor_status.pixels_selected = new_selection;
 
+    preview.draw();
     draw();
 }
 
 function editor_click(x, y) {
     if (editor_status.mode === MODE_DRAW) {
         editor_status.pixels_covered = new Set();
-        editor_place_pixel(x, y);
+        if (editor_place_pixel(x, y)) {
+            preview.draw();
+            draw();
+        }
     }
-    draw();
 }
 
 function editor_drag(x, y) {
     if (editor_status.mode === MODE_MOVE) {
         editor_status.cx = editor_status.old_cx + x - editor_status.mouse_down_x;
         editor_status.cy = editor_status.old_cy + y - editor_status.mouse_down_y;
+        draw();
     } else if (editor_status.mode === MODE_DRAW) {
-        editor_place_pixel(x, y);
+        if (editor_place_pixel(x, y)) {
+            preview.draw();
+            draw();
+        }
     } else if (editor_status.mode === MODE_DRAG) {
         editor_status.pixels_selected_tmp = new Set();
         let dx = Math.floor((x - editor_status.mouse_down_x) / editor_status.pixel_size);
@@ -195,8 +210,8 @@ function editor_drag(x, y) {
             let [px, py] = pixel.split(",").map(x => +x);
             editor_status.pixels_selected_tmp.add(`${px + dx},${py + dy}`);
         }
+        draw();
     }
-    draw();
 }
 
 function editor_commit_history() {
@@ -232,10 +247,12 @@ export function editor_undo() {
     if (second_last_glyph !== -1) {
         font_data.glyphs.set(editor_status.current_glyph, font_data.history[second_last_glyph].data);
         font_data.history.splice(last_glyph, 1);
+        preview.draw();
         draw();
     } else if (last_glyph !== -1) {
         font_data.glyphs.set(editor_status.current_glyph, new_glyph());
         font_data.history.splice(last_glyph, 1);
+        preview.draw();
         draw();
     }
 }
@@ -285,6 +302,7 @@ editor_canvas.addEventListener("mousedown", (event) => {
         if (offset !== 0 && editor_status.current_glyph + offset >= 0 && editor_status.current_glyph + offset <= 0x1FFFF) {
             editor_status.current_glyph += offset;
             update_info();
+            draw();
         }
     } else if (keys_pressed.get(" ") || event.button === 1) {
         editor_status.tmp_mode = MODE_MOVE;

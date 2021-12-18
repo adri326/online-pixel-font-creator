@@ -12,6 +12,8 @@
     <script src="import.js" defer type="module"></script>
     <script src="main.js" defer type="module"></script>
     <script src="resize.js" defer type="module"></script>
+    <script src="editor.js" defer type="module"></script>
+    <script src="preview.js" defer type="module"></script>
     <script src="https://cdn.jsdelivr.net/npm/opentype.js@latest/dist/opentype.min.js"></script>
 </head>
 <body>
@@ -60,7 +62,10 @@
                 <button id="button-upload">Upload</button>
             </div>
         </div>
-        <div id="preview">This is the preview (TODO)!</div>
+        <div id="preview">
+            <canvas id="preview-canvas"></canvas>
+            <textarea id="preview-prompt">This is the preview (TODO)!</textarea>
+        </div>
     </div>
     <div id="import-menu" class="hidden settings"><div>
         <div class="flex-horizontal flex-end"><button id="import-menu-close">Close</button></div>
