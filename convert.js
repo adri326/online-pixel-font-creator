@@ -176,8 +176,6 @@ export function generate_truetype(font_data) {
             }
         }
 
-        console.log(id, loops);
-
         for (let loop of loops) {
             if (loop.length < 4) continue;
             path.moveTo(...coords(corners[loop[0]][0], corners[loop[0]][1]));

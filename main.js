@@ -57,7 +57,9 @@ const button_save_local = document.getElementById("button-save");
 const button_load_local = document.getElementById("button-load");
 const button_download = document.getElementById("button-download");
 const button_download_otf = document.getElementById("button-download-otf");
-// const button_upload = document.getElementById("button-upload");
+const button_upload = document.getElementById("button-upload");
+
+const import_menu = document.getElementById("import-menu");
 
 const ZOOM_STRENGTH = 0.001;
 
@@ -155,6 +157,10 @@ export let font_data = {
     glyphs: new Map(),
     history: [],
 };
+
+export function set_font_data(data) {
+    window.font_data = font_data = data;
+}
 
 let keys_pressed = new Map();
 
@@ -584,6 +590,20 @@ button_download.addEventListener("click", () => {
 
 button_download_otf.addEventListener("click", () => {
     generate_truetype(font_data).download();
+});
+
+button_upload.addEventListener("click", () => {
+    import_menu.classList.remove("hidden");
+});
+
+document.querySelectorAll(".upload").forEach((wrapper) => {
+    let input = wrapper.querySelector("input[type=file]");
+    let label = wrapper.querySelector("label");
+    let status = wrapper.querySelector("span");
+
+    input.addEventListener("change", (event) => {
+        status.innerText = input.files[0].name;
+    });
 });
 
 // Of course fromCharCode doesn't handle utf-16, so we have to manually do the conversion and hope it works

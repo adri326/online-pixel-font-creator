@@ -70,7 +70,7 @@ body.resize-vertical {
     line-height: 1.9em;
 }
 
-button, input[type="text"] {
+button, input[type="text"], .button {
     all: unset;
     font-size: inherit;
     color: inherit;
@@ -86,7 +86,7 @@ button, input[type="text"] {
     border-radius: 1px;
 }
 
-button {
+button, .button {
     cursor: pointer;
     user-select: none;
 }
@@ -185,7 +185,7 @@ button {
     font-size: 12pt;
 }
 
-#settings input[type="text"], #settings button {
+.settings input[type="text"], .settings button, .settings .button {
     background: var(--color-white);
     border: 1px solid var(--color-primary-dark);
     border-radius: 2px;
@@ -193,26 +193,26 @@ button {
     transition: background-color 0.2s, box-shadow 0.2s, border 0.2s, color 0.2s;
 }
 
-#settings input::placeholder {
+.settings input::placeholder {
     opacity: 1;
     color: var(--color-gray-dark);
 }
 
-#settings input:hover, #settings input:focus {
+.settings input:hover, .settings input:focus {
     box-shadow: 0px 2px 4px -2px rgba(0, 0, 0, 0.5);
 }
 
-#settings input.small {
+.settings input.small {
     width: 5em;
 }
 
-#settings button:hover {
+.settings button:hover, .settings .button:hover {
     border: 1px solid var(--color-black);
     background-color: var(--color-alt-light);
     box-shadow: 0px 2px 4px -2px rgba(0, 0, 0, 0.5);
 }
 
-#settings button:active {
+.settings button:active, .settings .button:active {
     border: 1px solid var(--color-black);
     background-color: var(--color-alt-dark);
 }
@@ -245,4 +245,82 @@ h2 {
 
 #settings .flex.wrap {
     flex-wrap: wrap;
+}
+
+#import-menu {
+    position: absolute;
+    background: rgba(16, 16, 16, 0.3);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.hidden {
+    display: none !important;
+}
+
+#import-menu > div {
+    background: var(--color-white);
+    width: calc(100% - 24em);
+    min-height: calc(100% - 24em);
+    display: flex;
+    flex-direction: column;
+    padding-left: 2em;
+    padding-right: 2em;
+    padding-bottom: 2em;
+    padding-top: 1em;
+    align-items: flex-start;
+    font-family: monospace;
+    font-size: 12pt;
+}
+
+#import-menu textarea {
+    width: 100%;
+    height: 24em;
+    margin-bottom: 1em;
+    font-family: monospace;
+    font-size: 12pt;
+}
+
+#import-menu button, #import-menu .button {
+    background: white;
+}
+
+#import-menu button:hover, #import-menu .button:hover {
+    background: var(--color-alt-light);
+}
+
+#import-menu button:active, #import-menu .button:active {
+    background: var(--color-alt-dark);
+}
+
+#import-menu-close {
+    margin-bottom: 1em;
+}
+
+.upload {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.upload > span {
+    color: var(--color-gray-dark);
+    margin-left: 0.5em;
+    margin-right: 0.5em;
+}
+
+.flex-horizontal {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.flex-end {
+    justify-content: flex-end;
 }
