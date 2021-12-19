@@ -1,5 +1,3 @@
-import {resize} from "./main.js";
-
 const resizer = document.getElementById("resizer");
 
 export function attach_resizer(resizer, min = 0, max = 1, horizontal = true, callback = () => {}) {
@@ -41,6 +39,8 @@ export function attach_resizer(resizer, min = 0, max = 1, horizontal = true, cal
     });
 }
 
-attach_resizer(resizer, 0.25, 0.75, true, () => {
-    resize();
-});
+export function init(resize_canvas) {
+    attach_resizer(resizer, 0.25, 0.75, true, () => {
+        resize_canvas();
+    });
+}

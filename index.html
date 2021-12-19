@@ -6,14 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Online Pixel Font creator</title>
     <link rel="stylesheet" href="./style.css">
-    <script src="draw.js" type="module"></script>
-    <script src="base64.js" type="module"></script>
-    <script src="convert.js" type="module"></script>
-    <script src="import.js" defer type="module"></script>
-    <script src="main.js" defer type="module"></script>
-    <script src="resize.js" defer type="module"></script>
-    <script src="editor.js" defer type="module"></script>
-    <script src="preview.js" defer type="module"></script>
+    <script src="src/main.js" type="module"></script>
+    <script src="src/utils.js" type="module"></script>
+    <script src="src/base64.js" type="module"></script>
+    <script src="src/convert.js" defer type="module"></script>
+
+    <script src="src/import.js" defer type="module"></script>
+    <script src="src/resize.js" defer type="module"></script>
+    <script src="src/editor.js" defer type="module"></script>
+    <script src="src/preview.js" defer type="module"></script>
+    <script src="src/settings.js" defer type="module"></script>
     <script src="https://cdn.jsdelivr.net/npm/opentype.js@latest/dist/opentype.min.js"></script>
 </head>
 <body>
@@ -22,16 +24,16 @@
         <div id="editor-toolbox">
             <button id="button-undo" onclick="editor.editor_undo();">Undo</button>
             <span>Operation:</span>
-            <button id="button-xor" onclick="editor_status.operation = editor.OP_XOR;" class="active">XOR</button>
-            <button id="button-one" onclick="editor_status.operation = editor.OP_ONE;">ONE</button>
-            <button id="button-zero" onclick="editor_status.operation = editor.OP_ZERO;">ZERO</button>
-            <button id="button-select" onclick="editor_status.operation = editor.OP_SELECT;">SEL</button>
-            <button id="button-deselect" onclick="editor_status.operation = editor.OP_DESELECT;">DESEL</button>
+            <button id="button-xor" class="active">XOR</button>
+            <button id="button-one">ONE</button>
+            <button id="button-zero">ZERO</button>
+            <button id="button-select">SEL</button>
+            <button id="button-deselect">DESEL</button>
             <span>Tool:</span>
-            <button id="button-draw" onclick="editor_status.persistent_mode = editor.MODE_DRAW;" class="active">Draw</button>
-            <button id="button-move" onclick="editor_status.persistent_mode = editor.MODE_MOVE;">Pan</button>
-            <button id="button-deselect-all" onclick="editor_status.pixels_selected = new Set(); draw();">Deselect all</button>
-            <button id="button-drag" onclick="editor_status.persistent_mode = editor.MODE_DRAG;">Drag</button>
+            <button id="button-draw" class="active">Draw</button>
+            <button id="button-move">Pan</button>
+            <button id="button-deselect-all">Deselect all</button>
+            <button id="button-drag">Drag</button>
             <input type="text" placeholder="Jump to glyph..." id="jump-glyph">
             <span id="editor-info" class="loading">Loading information...</span>
         </div>
