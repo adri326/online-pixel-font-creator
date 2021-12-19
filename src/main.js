@@ -14,6 +14,10 @@ let _font_data = new ProxyListener({
     em_size: +8,
     glyphs: new Map(),
     history: [],
+
+    name: "My Amazing Font",
+    author: "Anonymous",
+    style: "Medium",
 });
 
 export function font_data() {
@@ -24,6 +28,7 @@ export function set_font_data(font_data) {
     _font_data.revoke();
     _font_data = new ProxyListener(font_data, _font_data.listeners);
     _font_data.update();
+    settings.read_from_font();
 }
 
 export let unicode_data = null;
@@ -74,6 +79,13 @@ Promise.all(loading_promises).then(() => {
 
     window.addEventListener("keydown", (event) => {
         keys_pressed.set(event.key, true);
+
+        if (event.key === "s" && event.ctrlKey) {
+            settings.save_font(true);
+            event.preventDefault();
+            event.returnValue = ""; // Polyfill
+            return false;
+        }
 
         if (editor.editor_status.hovered) {
             editor.keydown(event);

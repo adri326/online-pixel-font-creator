@@ -1,5 +1,6 @@
 import * as utils from "./utils.js";
 import {font_data, unicode_data, unicode_blocks, keys_pressed} from "./main.js";
+import * as settings from "./settings.js";
 
 export const editor_canvas = document.getElementById("editor-canvas");
 export const editor_ctx = editor_canvas.getContext("2d");
@@ -321,8 +322,8 @@ export function keydown(event) {
         editor_status.current_glyph += 1;
     } else if (HOTKEYS.get(event.key) && !event.altKey && !event.ctrlKey && !event.metaKey) {
         HOTKEYS.get(event.key)();
-    } else if (event.key === "z" && event.ctrlKey) {
-        editor_undo();
+    } else if (event.ctrlKey) {
+        if (event.key === "z") editor_undo();
     }
 }
 
@@ -524,7 +525,6 @@ export function init() {
             let offset = Math.floor(event.clientX / (fd.width + 2) / PREVIEW_MULT) - Math.round(n_chars / 2);
             if (offset !== 0 && editor_status.current_glyph + offset >= 0 && editor_status.current_glyph + offset <= 0x1FFFF) {
                 editor_status.current_glyph += offset;
-                update_info();
             }
         } else if (keys_pressed.get(" ") || event.button === 1) {
             editor_status.tmp_mode = MODE_MOVE;
@@ -581,14 +581,12 @@ export function init() {
         let match = /^(?:U\+)?([0-9A-F]{4,6})$/i.exec(elements.jump_glyph.value);
         if (match) {
             editor_status.current_glyph = Number.parseInt(match[1], 16);
-            update_info();
             elements.jump_glyph.value = "";
         } else if (elements.jump_glyph.value) {
             editor_status.current_glyph = utils.from_utf16(elements.jump_glyph.value);
             if (editor_status.current_glyph < 0 || editor_status.current_glyph > 0x1FFFF) {
                 editor_status.current_glyph = elements.jump_glyph.value.charCodeAt(0);
             }
-            update_info();
             elements.jump_glyph.value = "";
         }
     });
@@ -621,6 +619,8 @@ export function init() {
     editor_status.listen((target, property) => {
         if (property === "operation" || property === "tmp_mode" || property === "persistent_mode") {
             update_buttons();
+        } else if (property === "current_glyph") {
+            update_info();
         }
     });
 }

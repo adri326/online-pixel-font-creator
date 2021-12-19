@@ -41,7 +41,12 @@
     <div id="resizer"><div></div></div>
     <div id="manipulate">
         <div id="settings" class="settings">
-            <h2>Settings</h2>
+            <h2>Font name</h2>
+            <div>Name: <input type="text" id="input-name" placeholder="My Amazing Font"></div>
+            <div>Author: <input type="text" id="input-author" placeholder="Anonymous"></div>
+            <div>Style: <input type="text" id="input-style" placeholder="Medium"></div>
+            <div></div>
+            <h2>Dimensions</h2>
             <div>
                 Width: <input type="text" id="input-width" class="small" placeholder="8">
                 Height: <input type="text" id="input-height" class="small" placeholder="10">
@@ -66,7 +71,7 @@
         </div>
         <div id="preview">
             <canvas id="preview-canvas"></canvas>
-            <textarea id="preview-prompt">This is the preview (TODO)!</textarea>
+            <textarea id="preview-prompt">The quick fox jumps over the lazy dog</textarea>
         </div>
     </div>
     <div id="import-menu" class="hidden settings"><div>

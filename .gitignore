@@ -1,7 +1,6 @@
 *.png~
 *.ttf
 *.otf
-*.pfs
 settings.json
 
 # Temporary

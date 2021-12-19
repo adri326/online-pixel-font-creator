@@ -10,6 +10,10 @@ export const elements = utils.get_elements_by_id({
     button_download_otf: "button-download-otf",
     button_upload: "button-upload",
 
+    input_name: "input-name",
+    input_author: "input-author",
+    input_style: "input-style",
+
     input_width: "input-width",
     input_height: "input-height",
     input_ascend: "input-ascend",
@@ -38,7 +42,20 @@ export function update_spacing() {
     }
 }
 
-function load_font() {
+export function update_name() {
+    let fd = font_data();
+    if (elements.input_name.value && elements.input_name.value !== fd.name) {
+        fd.name = elements.input_name.value;
+    }
+    if (elements.input_author.value && elements.input_author.value !== fd.author) {
+        fd.author = elements.input_author.value;
+    }
+    if (elements.input_style.value && elements.input_style.value !== fd.style) {
+        fd.style = elements.input_style.value;
+    }
+}
+
+export function load_font() {
     let raw_data = window.localStorage.getItem("font_data");
     if (raw_data) {
         set_font_data(deserialize_font(raw_data));
@@ -51,11 +68,37 @@ function load_font() {
         elements.input_ascend.value = fd.ascend;
         elements.input_descend.value = fd.descend;
         elements.input_spacing.value = fd.spacing;
+
+        elements.input_name.value = fd.name || "My Amazing Font";
+        elements.input_author.value = fd.author || "Anonymous";
+        elements.input_style.value = fd.style || "Medium";
     }
 }
 
-function save_font() {
+export function read_from_font() {
+    let fd = font_data();
+
+    elements.input_width.value = fd.width;
+    elements.input_height.value = fd.height;
+
+    elements.input_baseline.value = fd.baseline;
+    elements.input_ascend.value = fd.ascend;
+    elements.input_descend.value = fd.descend;
+    elements.input_spacing.value = fd.spacing;
+
+    elements.input_name.value = fd.name || "My Amazing Font";
+    elements.input_author.value = fd.author || "Anonymous";
+    elements.input_style.value = fd.style || "Medium";
+}
+
+export function save_font(flash_button = false) {
     window.localStorage.setItem("font_data", serialize_font(font_data()));
+    if (flash_button) {
+        elements.button_save.classList.add("active");
+        setTimeout(() => {
+            elements.button_save.classList.remove("active");
+        }, 200);
+    }
 }
 
 export function init() {
@@ -65,6 +108,10 @@ export function init() {
         input.addEventListener("change", update_spacing);
         input.addEventListener("keyup", update_spacing);
     }
+
+    elements.input_name.addEventListener("change", update_name);
+    elements.input_author.addEventListener("change", update_name);
+    elements.input_style.addEventListener("change", update_name);
 
     load_font();
 

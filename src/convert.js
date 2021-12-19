@@ -4,7 +4,10 @@ import {bytesToBase64, base64ToBytes} from "./base64.js";
 // Data is stored as base64, with characters encoded as big endian 8-bit numbers
 
 export function serialize_font(font_data) {
-    let res = `${font_data.width}:${font_data.height}`;
+    let res = font_data.name.replace(/\n/g, "\\n") + "\n";
+    res += font_data.author.replace(/\n/g, "\\n") + "\n";
+    res += font_data.style.replace(/\n/g, "\\n") + "\n";
+    res += `${font_data.width}:${font_data.height}`;
     res += `:${font_data.baseline}:${font_data.ascend}:${font_data.descend}:${font_data.spacing}:${font_data.em_size}`;
 
     for (let [id, glyph] of font_data.glyphs) {
@@ -29,22 +32,33 @@ export function deserialize_font(raw) {
     let lines = raw.split("\n");
     let iter = lines[Symbol.iterator]();
 
-    let first_line = iter.next().value.split(":").map(x => +x);
+    let name = iter.next().value.replace(/\\n/g, "\n");
+    let author = iter.next().value.replace(/\\n/g, "\n");
+    let style = iter.next().value.replace(/\\n/g, "\n");
+
+    let spacing = iter.next().value.split(":").map(x => +x);
+
+    console.log(spacing);
 
     let font_data = {
-        width: first_line[0],
-        height: first_line[1],
-        baseline: first_line[2],
-        ascend: first_line[3],
-        descend: first_line[4],
-        spacing: first_line[5],
-        em_size: first_line[6],
+        width: spacing[0],
+        height: spacing[1],
+        baseline: spacing[2],
+        ascend: spacing[3],
+        descend: spacing[4],
+        spacing: spacing[5],
+        em_size: spacing[6],
 
         glyphs: new Map(),
         history: [],
+
+        name,
+        author,
+        style
     };
 
     for (let raw_glyph of iter) {
+        if (!raw_glyph.trim()) continue;
         let [id, b64] = raw_glyph.split(":");
         id = +id;
 
@@ -196,8 +210,8 @@ export function generate_truetype(font_data) {
     }
 
     let font = new opentype.Font({
-        familyName: "My Font",
-        styleName: "Medium",
+        familyName: font_data.name,
+        styleName: font_data.style || "Medium",
         unitsPerEm: PIXEL_SIZE * font_data.em_size,
         ascender: PIXEL_SIZE * font_data.ascend,
         descender: PIXEL_SIZE * font_data.descend,
