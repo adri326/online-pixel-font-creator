@@ -1,6 +1,7 @@
 # Online Pixel Font Creator
 
 A tool for creating, editing and exporting pixel fonts within the browser.
+[You can try it out here!](https://adri326.github.io/online-pixel-font-creator/index.html)
 
 This tool is inspired by [YellowAfterLife's](https://yal.cc) [excellent tool for converting images into pixel fonts](https://yellowafterlife.itch.io/pixelfont).
 The font creation process using YellowAfterLife's tool has some downsides, which resolve around the need to put all of the glyphs into one growing image:
