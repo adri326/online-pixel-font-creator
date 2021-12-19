@@ -57,8 +57,8 @@ HOTKEYS.set("D", () => {
         elements.button_deselect_all.className = "";
     }, 200);
 });
-HOTKEYS.set("t", () => editor_status.persistent_mode = MODE_MOVE);
-HOTKEYS.set("g", () => editor_status.persistent_mode = MODE_DRAG);
+HOTKEYS.set("p", () => editor_status.persistent_mode = MODE_MOVE);
+HOTKEYS.set("t", () => editor_status.persistent_mode = MODE_DRAG);
 
 const elements = utils.get_elements_by_id({
     button_xor: "button-xor",

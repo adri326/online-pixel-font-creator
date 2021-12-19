@@ -68,6 +68,7 @@ export function load_font() {
         elements.input_ascend.value = fd.ascend;
         elements.input_descend.value = fd.descend;
         elements.input_spacing.value = fd.spacing;
+        elements.input_em_size.value = fd.em_size;
 
         elements.input_name.value = fd.name || "My Amazing Font";
         elements.input_author.value = fd.author || "Anonymous";
@@ -85,6 +86,7 @@ export function read_from_font() {
     elements.input_ascend.value = fd.ascend;
     elements.input_descend.value = fd.descend;
     elements.input_spacing.value = fd.spacing;
+    elements.input_em_size.value = fd.em_size;
 
     elements.input_name.value = fd.name || "My Amazing Font";
     elements.input_author.value = fd.author || "Anonymous";
