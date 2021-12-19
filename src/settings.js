@@ -135,4 +135,26 @@ export function init() {
     elements.button_upload.addEventListener("click", () => {
         elements.import_menu.classList.remove("hidden");
     });
+
+    elements.button_resize.addEventListener("click", () => {
+        let fd = font_data();
+        let width = +(elements.input_width.value || 8);
+        let height = +(elements.input_height.value || 8);
+
+        if (!elements.input_width.value && !elements.input_height.value || isNaN(width) || isNaN(height)) return;
+
+        for (let [id, glyph] of fd.glyphs) {
+            while (glyph.length > height) glyph.pop();
+            for (let row of glyph) {
+                while (row.length > width) row.pop();
+                while (row.length < width) row.push(false);
+            }
+            while (glyph.length < height) glyph.push(new Array(width).fill(false));
+        }
+        fd.update("glyphs");
+
+        fd.width = width;
+        fd.height = height;
+        fd.history = []; // Sorry
+    });
 }
