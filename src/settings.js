@@ -9,6 +9,7 @@ export const elements = utils.get_elements_by_id({
     button_download: "button-download",
     button_download_otf: "button-download-otf",
     button_upload: "button-upload",
+    button_clear: "button-clear",
 
     input_name: "input-name",
     input_author: "input-author",
@@ -119,6 +120,9 @@ export function init() {
 
     elements.button_save.addEventListener("click", save_font);
     elements.button_load.addEventListener("click", load_font);
+    elements.button_clear.addEventListener("click", () => {
+        window.localStorage.removeItem("font_data");
+    });
 
     elements.button_download.addEventListener("click", () => {
         let url = window.URL.createObjectURL(new Blob([serialize_font(font_data())], {type: "text/plain"}));

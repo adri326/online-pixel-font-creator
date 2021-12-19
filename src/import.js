@@ -3,7 +3,7 @@ import {deserialize_font} from "./convert.js";
 import {set_font_data} from "./main.js";
 
 const elements = utils.get_elements_by_id({
-    input_textarea: "pase-file",
+    input_textarea: "paste-file",
     input_file: "import-file",
 
     import_as_pfs: "import-as-pixel-font",
