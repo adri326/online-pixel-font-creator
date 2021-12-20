@@ -38,8 +38,6 @@ export function deserialize_font(raw) {
 
     let spacing = iter.next().value.split(":").map(x => +x);
 
-    console.log(spacing);
-
     let font_data = {
         width: spacing[0],
         height: spacing[1],
@@ -213,7 +211,7 @@ export function generate_truetype(font_data) {
 
             while (current = open.pop()) {
                 let [x, y] = current;
-                res[x + y * font_data.height] = true;
+                res[x + y * font_data.width] = true;
                 for (let [dx, dy] of [[-1, 0], [0, -1], [1, 0], [0, 1]]) {
                     if (x + dx < 0 || x + dx >= font_data.width || y + dy < 0 || y + dy >= font_data.height) continue;
                     let index = x + dx + (y + dy) * font_data.width;
