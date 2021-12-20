@@ -89,6 +89,9 @@ button, input[type="text"], .button {
 button, .button {
     cursor: pointer;
     user-select: none;
+    position: relative;
+    margin-top: 0.1em;
+    margin-bottom: 0.1em;
 }
 
 #editor-toolbox > button, #editor-toolbox > input[type="text"] {
@@ -387,4 +390,26 @@ h2 {
 
 #settings > div:nth-of-type(2) {
     padding: 0.5em 1em;
+}
+
+.button > select {
+    appearance: none;
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    padding-right: 1em;
+}
+
+.button > select + i {
+    font-style: normal;
+    position: absolute;
+    right: 0.5em;
+    top: 0.1em;
+}
+
+.pad-vertical {
+    padding-top: 0.2em;
+    padding-bottom: 0.2em;
 }

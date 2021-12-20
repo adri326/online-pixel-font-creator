@@ -57,6 +57,14 @@
                     <div title="The style of the font is used to indicate the how bold or italic the font is.">Style: <input type="text" id="input-style" placeholder="Medium"></div>
                     <div></div>
                     <h2>Dimensions</h2>
+                    <div class="pad-vertical">
+                        Where to add blank pixels: <span class="button"><select id="select-resize-mode">
+                            <option value="tl">Top-left</option>
+                            <option value="tr">Top-right</option>
+                            <option value="bl">Bottom-left</option>
+                            <option value="br">Bottom-right</option>
+                        </select><i>&#x25bc;</i></span>
+                    </div>
                     <div>
                         Width: <input type="text" id="input-width" class="small" placeholder="8" title="The height of a character, in pixels.">
                         Height: <input type="text" id="input-height" class="small" placeholder="10" title="The width of a character, in pixels.">

@@ -5,6 +5,7 @@ import * as editor from "./editor.js";
 
 export const elements = utils.get_elements_by_id({
     button_resize: "button-resize",
+    select_resize: "select-resize-mode",
     button_save: "button-save",
     button_load: "button-load",
     button_download: "button-download",
@@ -148,16 +149,30 @@ export function init() {
         let fd = font_data();
         let width = +(elements.input_width.value || 8);
         let height = +(elements.input_height.value || 8);
+        let mode = elements.select_resize.value;
 
         if (!elements.input_width.value && !elements.input_height.value || isNaN(width) || isNaN(height)) return;
 
         for (let [id, glyph] of fd.glyphs) {
-            while (glyph.length > height) glyph.pop();
-            for (let row of glyph) {
-                while (row.length > width) row.pop();
-                while (row.length < width) row.push(false);
+            if (mode[0] === "t") {
+                while (glyph.length > height) glyph.shift();
+            } else {
+                while (glyph.length > height) glyph.pop();
             }
-            while (glyph.length < height) glyph.push(new Array(width).fill(false));
+            for (let row of glyph) {
+                if (mode[1] === "l") {
+                    while (row.length > width) row.shift();
+                    while (row.length < width) row.unshift(false);
+                } else {
+                    while (row.length > width) row.pop();
+                    while (row.length < width) row.push(false);
+                }
+            }
+            if (mode[0] === "t") {
+                while (glyph.length < height) glyph.unshift(new Array(width).fill(false));
+            } else {
+                while (glyph.length < height) glyph.push(new Array(width).fill(false));
+            }
         }
         fd.update("glyphs");
 
