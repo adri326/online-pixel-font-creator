@@ -1,6 +1,7 @@
 import * as utils from "./utils.js";
 import {font_data, unicode_data, unicode_blocks, keys_pressed} from "./main.js";
 import * as settings from "./settings.js";
+import {Glyph} from "./glyph.js";
 
 export const editor_canvas = document.getElementById("editor-canvas");
 export const editor_ctx = editor_canvas.getContext("2d");
@@ -137,18 +138,18 @@ function editor_place_pixel(x, y) {
         editor_status.pixels_covered.add(`${px},${py}`);
         let current_glyph = fd.glyphs.get(editor_status.current_glyph);
         if (!current_glyph) {
-            current_glyph = utils.new_glyph(fd.width, fd.height);
+            current_glyph = new Glyph(fd.width, fd.height);
             fd.glyphs.set(editor_status.current_glyph, current_glyph);
             fd.update("glyphs");
         }
-        let previous = current_glyph[py][px];
+        let previous = current_glyph.get(px, py);
 
         if (editor_status.operation === OP_XOR) {
-            current_glyph[py][px] = !current_glyph[py][px];
+            current_glyph.set(px, py, !current_glyph.get(px, py));
         } else if (editor_status.operation === OP_ONE) {
-            current_glyph[py][px] = true;
+            current_glyph.set(px, py, true);
         } else if (editor_status.operation === OP_ZERO) {
-            current_glyph[py][px] = false;
+            current_glyph.set(px, py, false);
         } else if (editor_status.operation === OP_SELECT) {
             editor_status.pixels_selected.add(`${px},${py}`);
             editor_status.update("pixels_selected");
@@ -157,7 +158,7 @@ function editor_place_pixel(x, y) {
             editor_status.update("pixels_selected");
         }
 
-        if (previous !== current_glyph[py][px]) {
+        if (previous !== current_glyph.get(px, py)) {
             fd.update("glyphs");
         }
     }
@@ -173,12 +174,12 @@ function editor_apply_drag(x, y) {
     let dy = Math.floor((y - editor_status.mouse_down_y) / editor_status.pixel_size);
     let current_glyph = fd.glyphs.get(editor_status.current_glyph);
 
-    let new_glyph = current_glyph.map(row => [...row]);
+    let new_glyph = Glyph.clone(current_glyph);
     let new_selection = new Set();
 
     for (let pixel of editor_status._pixels_selected) {
         let [px, py] = pixel.split(",").map(x => +x);
-        new_glyph[py][px] = false;
+        new_glyph.set(px, py, false);
     }
 
     for (let pixel of editor_status._pixels_selected) {
@@ -186,7 +187,7 @@ function editor_apply_drag(x, y) {
 
         if (editor_pixel_inside(px + dx, py + dy)) {
             new_selection.add(`${px + dx},${py + dy}`);
-            new_glyph[py + dy][px + dx] = current_glyph[py][px];
+            new_glyph.set(px + dx, py + dy, current_glyph.get(px, py));
         }
     }
 
@@ -230,7 +231,7 @@ function editor_commit_history() {
             last_glyph = fd.history[last_glyph];
             for (let y = 0; y < fd.height; y++) {
                 for (let x = 0; x < fd.width; x++) {
-                    if (last_glyph.data[y][x] != current_glyph[y][x]) {
+                    if (last_glyph.data[x + y * fd.width] != current_glyph.get(x, y)) {
                         return true;
                     }
                 }
@@ -243,7 +244,7 @@ function editor_commit_history() {
     if (should_commit()) {
         fd.history.push({
             id: editor_status.current_glyph,
-            data: current_glyph.map(row => [...row]),
+            data: [...current_glyph.data],
         });
     }
 }
@@ -254,11 +255,11 @@ export function editor_undo() {
     let last_glyph = fd.history.findLastIndex(entry => entry.id === editor_status.current_glyph);
     let second_last_glyph = fd.history.findSecondLastIndex(entry => entry.id === editor_status.current_glyph);
     if (second_last_glyph !== -1) {
-        fd.glyphs.set(editor_status.current_glyph, fd.history[second_last_glyph].data);
+        fd.glyphs.get(editor_status.current_glyph).data = fd.history[second_last_glyph].data;
         fd.history.splice(last_glyph, 1);
         fd.update("history");
     } else if (last_glyph !== -1) {
-        fd.glyphs.set(editor_status.current_glyph, utils.new_glyph(fd.width, fd.height));
+        fd.glyphs.set(editor_status.current_glyph, new Glyph(fd.width, fd.height));
         fd.history.splice(last_glyph, 1);
         fd.update("history");
     }
@@ -396,7 +397,7 @@ export function draw() {
         editor_ctx.fillStyle = COLOR_PIXEL_BLACK;
         for (let y = 0; y < fd.height; y++) {
             for (let x = 0; x < fd.width; x++) {
-                if (current_glyph[y][x]) {
+                if (current_glyph.get(x, y)) {
                     rect(x, y, x + 1, y + 1);
                 }
                 if (editor_status.pixels_selected.has(`${x},${y}`)) {
@@ -492,7 +493,7 @@ export function draw() {
             editor_ctx.fillStyle = COLOR_NEIGHBORS;
             for (let dy = 0; dy < fd.height; dy++) {
                 for (let dx = 0; dx < fd.width; dx++) {
-                    if (!current_glyph[dy][dx]) continue;
+                    if (!current_glyph.get(dx, dy)) continue;
                     drew_pixel = true;
                     editor_ctx.fillRect(
                         x + dx * PREVIEW_MULT,

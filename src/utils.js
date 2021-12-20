@@ -134,11 +134,6 @@ document.querySelectorAll(".upload").forEach((wrapper) => {
     });
 });
 
-
-export function new_glyph(width, height) {
-    return new Array(height).fill(null).map(_ => new Array(width).fill(false));
-}
-
 export const FileReaderPromise = new Proxy(FileReader, {
     get(target, property, receiver) {
         if (Reflect.has(FileReader.prototype, property)) {

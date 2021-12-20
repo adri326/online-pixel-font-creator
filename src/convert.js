@@ -1,5 +1,6 @@
 import {unicode_data} from "./main.js";
 import {bytesToBase64, base64ToBytes} from "./base64.js";
+import {Glyph} from "./glyph.js";
 
 // Data is stored as base64, with characters encoded as big endian 8-bit numbers
 
@@ -13,7 +14,7 @@ export function serialize_font(font_data) {
     for (let [id, glyph] of font_data.glyphs) {
         res += `\n${id}:`;
         let buffer = new Uint8Array(Math.ceil(font_data.width * font_data.height / 8 / Uint8Array.BYTES_PER_ELEMENT));
-        let pixels = glyph.flat();
+        let pixels = glyph.data;
         let current_index = 0;
         for (let n = 0; n < pixels.length; n += Uint8Array.BYTES_PER_ELEMENT * 8) {
             let sum = 0;
@@ -60,7 +61,6 @@ export function deserialize_font(raw) {
         let [id, b64] = raw_glyph.split(":");
         id = +id;
 
-        let glyph = [];
         let buffer = base64ToBytes(b64);
         let pixels = [];
 
@@ -71,11 +71,7 @@ export function deserialize_font(raw) {
             }
         }
 
-        for (let i = 0; i < pixels.length; i += font_data.width) {
-            glyph.push(pixels.slice(i, i + font_data.width));
-        }
-
-        font_data.glyphs.set(id, glyph);
+        font_data.glyphs.set(id, Glyph.from_pixels(pixels, font_data.width, font_data.height));
     }
 
     return font_data;
@@ -215,7 +211,7 @@ export function generate_truetype(font_data) {
                 for (let [dx, dy] of [[-1, 0], [0, -1], [1, 0], [0, 1]]) {
                     if (x + dx < 0 || x + dx >= font_data.width || y + dy < 0 || y + dy >= font_data.height) continue;
                     let index = x + dx + (y + dy) * font_data.width;
-                    if (glyph[y + dy][x + dx] && !explored[index]) {
+                    if (glyph.get(x + dx, y + dy) && !explored[index]) {
                         explored[index] = true;
                         open.push([x + dx, y + dy]);
                     }
@@ -227,7 +223,7 @@ export function generate_truetype(font_data) {
 
         for (let y = 0; y < font_data.height; y++) {
             for (let x = 0; x < font_data.width; x++) {
-                if (!explored[x + y * font_data.width] && glyph[y][x]) {
+                if (!explored[x + y * font_data.width] && glyph.get(x, y)) {
                     is_empty = false;
                     explored[x + y * font_data.width] = true;
                     generate_path_for_region(bfs(x, y), font_data, path);
@@ -277,11 +273,11 @@ export function load_truetype(font, width, height, em_size, baseline, spacing, n
         glyph.draw(ctx, 0, baseline, em_size);
 
         let data = ctx.getImageData(0, 0, width, height).data;
-        let table = new Array(height).fill(null).map(x => new Array(width).fill(false));
+        let table = new Glyph(width, height);
 
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
-                table[y][x] = data[(x + y * width) * 4 + 3] > 128; // Read from alpha channel
+                table.set(x, y, data[(x + y * width) * 4 + 3] > 128); // Read from alpha channel
             }
         }
 
@@ -336,11 +332,11 @@ export function load_image(image, config) {
             let id = config.glyphmap[y][x];
             let sx = x * (config.width + config.separation_x) + config.offset_x;
             let sy = y * (config.height + config.separation_y) + config.offset_y;
-            let glyph = new Array(config.height).fill(null).map(_ => new Array(config.width).fill(false));
+            let glyph = new Glyph(config.width, config.height);
 
             for (let dy = 0; dy < config.height; dy++) {
                 for (let dx = 0; dx < config.width; dx++) {
-                    glyph[dy][dx] = pixels[sy + dy]?.[sx + dx];
+                    glyph.set(dx, dy, pixels[sy + dy]?.[sx + dx]);
                 }
             }
 

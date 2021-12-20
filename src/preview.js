@@ -42,7 +42,7 @@ function preview_draw_glyph(glyph, codepoint, x, y) {
     preview_ctx.fillStyle = "black";
     for (let dy = 0; dy < fd.height; dy++) {
         for (let dx = 0; dx < fd.width; dx++) {
-            if (!glyph[dy][dx]) continue;
+            if (!glyph.get(dx, dy)) continue;
             let x1 = Math.round(sx + dx * pixel_size);
             let y1 = Math.round(sy + dy * pixel_size);
             let x2 = Math.round(sx + (dx + 1) * pixel_size);

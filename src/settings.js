@@ -2,6 +2,7 @@ import * as utils from "./utils.js";
 import {font_data, set_font_data} from "./main.js";
 import * as convert from "./convert.js";
 import * as editor from "./editor.js";
+import {Glyph} from "./glyph.js";
 
 export const elements = utils.get_elements_by_id({
     button_resize: "button-resize",
@@ -154,25 +155,19 @@ export function init() {
         if (!elements.input_width.value && !elements.input_height.value || isNaN(width) || isNaN(height)) return;
 
         for (let [id, glyph] of fd.glyphs) {
-            if (mode[0] === "t") {
-                while (glyph.length > height) glyph.shift();
-            } else {
-                while (glyph.length > height) glyph.pop();
-            }
-            for (let row of glyph) {
-                if (mode[1] === "l") {
-                    while (row.length > width) row.shift();
-                    while (row.length < width) row.unshift(false);
-                } else {
-                    while (row.length > width) row.pop();
-                    while (row.length < width) row.push(false);
+            let new_glyph = new Glyph(width, height);
+            // TODO: inherit properties from glyph
+            let sx = mode[1] === "l" ? width - fd.width : 0;
+            let sy = mode[1] === "t" ? height - fd.height : 0;
+
+            for (let y = 0; y < fd.height; y++) {
+                for (let x = 0; x < fd.width; x++) {
+                    new_glyph.set(sx + x, sy + y, glyph.get(x, y));
                 }
             }
-            if (mode[0] === "t") {
-                while (glyph.length < height) glyph.unshift(new Array(width).fill(false));
-            } else {
-                while (glyph.length < height) glyph.push(new Array(width).fill(false));
-            }
+
+            // Apparently this is safe?
+            fd.glyphs.set(id, new_glyph);
         }
         fd.update("glyphs");
 
@@ -187,12 +182,12 @@ export function init() {
             elements.input_paste_glyph.value = "";
             let fd = font_data();
             let glyph = fd.glyphs.get(codepoint);
-            let current_glyph = fd.glyphs.get(editor.editor_status.current_glyph) || utils.new_glyph(fd.width, fd.height);
+            let current_glyph = fd.glyphs.get(editor.editor_status.current_glyph) || new Glyph(fd.width, fd.height);
             if (glyph) {
                 for (let y = 0; y < fd.height; y++) {
                     for (let x = 0; x < fd.width; x++) {
                         // TODO: use editor operations?
-                        current_glyph[y][x] = glyph[y][x];
+                        current_glyph.set(x, y, glyph.get(x, y));
                     }
                 }
                 fd.glyphs.set(editor.editor_status.current_glyph, current_glyph);
