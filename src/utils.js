@@ -138,3 +138,29 @@ document.querySelectorAll(".upload").forEach((wrapper) => {
 export function new_glyph(width, height) {
     return new Array(height).fill(null).map(_ => new Array(width).fill(false));
 }
+
+export const FileReaderPromise = new Proxy(FileReader, {
+    get(target, property, receiver) {
+        if (Reflect.has(FileReader.prototype, property)) {
+            return function readAsX(file) {
+                return new Promise((resolve, reject) => {
+                    let reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(reader.error);
+                    reader[property](file);
+                });
+            };
+        } else {
+            throw new TypeError("FileReader has no property called " + property);
+        }
+    }
+});
+
+export function data_url_to_image(data_url) {
+    return new Promise((resolve, reject) => {
+        let image = document.createElement("img");
+        image.onload = () => resolve(image);
+        image.onerror = (err) => reject(err);
+        image.src = data_url;
+    });
+}

@@ -309,6 +309,61 @@ export function load_truetype(font, width, height, em_size, baseline, spacing, n
     };
 }
 
-window.serialize_font = serialize_font;
-window.deserialize_font = deserialize_font;
-window.generate_truetype = generate_truetype;
+export function load_image(image, config) {
+    let canvas = document.createElement("canvas");
+    canvas.width = image.width;
+    canvas.height = image.height;
+    let ctx = canvas.getContext("2d");
+    ctx.drawImage(image, 0, 0);
+    let data = ctx.getImageData(0, 0, image.width, image.height).data;
+
+    let pixels = new Array(image.height).fill(null).map(x => new Array(image.width).fill(false));
+    for (let y = 0; y < image.height; y++) {
+        for (let x = 0; x < image.width; x++) {
+            let index = (x + y * image.width) * 4;
+            if (config.color === "black" || config.color === "auto") { // Not so auto, but eh
+                pixels[y][x] = data[index] === 0 && data[index + 1] === 0 && data[index + 2] === 0;
+            } else if (config.color === "white") {
+                pixels[y][x] = data[index] === 255 && data[index + 1] === 255 && data[index + 2] === 255;
+            } else if (config.color === "opaque") {
+                pixels[y][x] = data[index + 3] > 128;
+            }
+        }
+    }
+
+    let glyphs = new Map();
+
+    for (let y = 0; y < config.glyphmap.length; y++) {
+        for (let x = 0; x < config.glyphmap[y].length; x++) {
+            let id = config.glyphmap[y][x];
+            let sx = x * (config.width + config.separation_x) + config.offset_x;
+            let sy = y * (config.height + config.separation_y) + config.offset_y;
+            let glyph = new Array(config.height).fill(null).map(_ => new Array(config.width).fill(false));
+
+            for (let dy = 0; dy < config.height; dy++) {
+                for (let dx = 0; dx < config.width; dx++) {
+                    glyph[dy][dx] = pixels[sy + dy]?.[sx + dx];
+                }
+            }
+
+            glyphs.set(id, glyph);
+        }
+    }
+
+    return {
+        name: config.name,
+        author: config.author,
+        style: "Medium",
+
+        width: config.width,
+        height: config.height,
+        glyphs,
+        history: [],
+
+        baseline: config.baseline,
+        spacing: config.spacing,
+        em_size: config.em_size,
+        ascend: config.ascend,
+        descend: config.descend,
+    };
+}

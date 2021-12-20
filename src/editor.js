@@ -206,7 +206,6 @@ function editor_drag(x, y) {
     if (editor_status.mode === MODE_MOVE) {
         editor_status.cx = editor_status.old_cx + x - editor_status.mouse_down_x;
         editor_status.cy = editor_status.old_cy + y - editor_status.mouse_down_y;
-        draw();
     } else if (editor_status.mode === MODE_DRAW) {
         editor_place_pixel(x, y);
     } else if (editor_status.mode === MODE_DRAG) {
@@ -330,6 +329,11 @@ export function keydown(event) {
 // === Draw ===
 
 export function draw() {
+    if (editor_canvas.width !== editor_canvas.clientWidth || editor_canvas.height !== editor_canvas.clientHeight) {
+        editor_canvas.width = editor_canvas.clientWidth;
+        editor_canvas.height = editor_canvas.clientHeight;
+    }
+
     let fd = font_data();
 
     editor_ctx.fillStyle = COLOR_BG;
@@ -609,6 +613,7 @@ export function init() {
 
     editor_status.listen((target, property) => {
         if (property === "hovered") return;
+
         utils.schedule_frame(draw);
     });
 
