@@ -1,6 +1,6 @@
 import * as utils from "./utils.js";
 import {font_data, set_font_data} from "./main.js";
-import {serialize_font, deserialize_font} from "./convert.js";
+import * as convert from "./convert.js";
 
 export const elements = utils.get_elements_by_id({
     button_resize: "button-resize",
@@ -59,7 +59,7 @@ export function update_name() {
 export function load_font() {
     let raw_data = window.localStorage.getItem("font_data");
     if (raw_data) {
-        set_font_data(deserialize_font(raw_data));
+        set_font_data(convert.deserialize_font(raw_data));
         let fd = font_data();
 
         elements.input_width.value = fd.width;
@@ -95,7 +95,7 @@ export function read_from_font() {
 }
 
 export function save_font(flash_button = false) {
-    window.localStorage.setItem("font_data", serialize_font(font_data()));
+    window.localStorage.setItem("font_data", convert.serialize_font(font_data()));
     if (flash_button) {
         elements.button_save.classList.add("active");
         setTimeout(() => {
@@ -125,7 +125,7 @@ export function init() {
     });
 
     elements.button_download.addEventListener("click", () => {
-        let url = window.URL.createObjectURL(new Blob([serialize_font(font_data())], {type: "text/plain"}));
+        let url = window.URL.createObjectURL(new Blob([convert.serialize_font(font_data())], {type: "text/plain"}));
         let a = document.createElement("a");
         a.href = url;
         a.download = "font.pfs";
@@ -133,7 +133,7 @@ export function init() {
     });
 
     elements.button_download_otf.addEventListener("click", () => {
-        generate_truetype(font_data()).download();
+        convert.generate_truetype(font_data()).download();
     });
 
     elements.button_upload.addEventListener("click", () => {
