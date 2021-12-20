@@ -261,6 +261,54 @@ export function generate_truetype(font_data) {
     return font;
 }
 
+export function load_truetype(font, width, height, em_size, baseline, spacing, name, author, style) {
+    if (!font.supported) {
+        throw new Error("Font is not supported!");
+    }
+
+    let canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    let ctx = canvas.getContext("2d");
+    let glyphs = new Map();
+    console.log(font);
+    for (let glyph of Object.values(font.glyphs.glyphs)) {
+        let id = glyph.unicode;
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "black";
+        glyph.draw(ctx, 0, baseline, em_size);
+
+        let data = ctx.getImageData(0, 0, width, height).data;
+        let table = new Array(height).fill(null).map(x => new Array(width).fill(false));
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                table[y][x] = data[(x + y * width) * 4 + 3] > 128; // Read from alpha channel
+            }
+        }
+
+        glyphs.set(id, table);
+    }
+
+    return {
+        name: name || "",
+        author: author || "",
+        style: style || "",
+
+        width,
+        height,
+        baseline,
+        em_size,
+
+        ascend: font.ascender / font.unitsPerEm * em_size,
+        descend: font.descender / font.unitsPerEm * em_size,
+        spacing,
+
+        glyphs,
+        history: [],
+    };
+}
+
 window.serialize_font = serialize_font;
 window.deserialize_font = deserialize_font;
 window.generate_truetype = generate_truetype;

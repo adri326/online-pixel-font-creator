@@ -5,13 +5,13 @@ import * as preview from "./preview.js";
 import * as resize from "./resize.js";
 
 let _font_data = new ProxyListener({
-    width: +8,
-    height: +10,
-    baseline: +8,
-    ascend: +7,
-    descend: +-1,
-    spacing: +1,
-    em_size: +8,
+    width: 8,
+    height: 10,
+    baseline: 8,
+    ascend: 7,
+    descend: -1,
+    spacing: 1,
+    em_size: 8,
     glyphs: new Map(),
     history: [],
 
