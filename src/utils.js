@@ -164,3 +164,42 @@ export function data_url_to_image(data_url) {
         image.src = data_url;
     });
 }
+
+export function register_tabbed() {
+    document.querySelectorAll(".tabbed").forEach(tabbed => {
+        let tabs = new Map();
+        let active = null;
+
+        tabbed.querySelectorAll(".tab").forEach(tab => {
+            tabs.set(tab.id, tab);
+        });
+
+        tabbed.switch_tab = function(name) {
+            for (let [tab_name, tab] of tabs) {
+                if (tab_name === name) tab.classList.add("shown");
+                else tab.classList.remove("shown");
+            }
+        };
+
+        tabbed.querySelectorAll(".tab-titles > *").forEach(button => {
+            button.switch_tab = function(name) {
+                tabbed.switch_tab(name);
+                if (active) {
+                    active.classList.remove("active");
+                }
+                active = this;
+                this.classList.add("active");
+            }
+            if (button.classList.contains("active")) active = button;
+        });
+    });
+}
+
+export function parse_glyph_or_codepoint(value) {
+    let match = /^(?:U\+)?([0-9A-F]{4,6})$/i.exec(value);
+    if (match) {
+        return Number.parseInt(match[1], 16);
+    } else if (value) {
+        return parse_utf16(value)[0] || 0;
+    }
+}

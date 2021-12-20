@@ -3,6 +3,7 @@ import * as editor from "./editor.js";
 import * as settings from "./settings.js";
 import * as preview from "./preview.js";
 import * as resize from "./resize.js";
+import * as utils from "./utils.js";
 
 let _font_data = new ProxyListener({
     width: 8,
@@ -102,6 +103,7 @@ Promise.all(loading_promises).then(() => {
     preview.init();
     editor.init();
     resize.init(resize_canvas);
+    utils.register_tabbed();
 
     _font_data.update();
     resize_canvas();
@@ -118,6 +120,7 @@ export function resize_canvas() {
     editor.draw();
     preview.draw();
 }
+window.resize_canvas = resize_canvas;
 
 // Keyboard handler
 

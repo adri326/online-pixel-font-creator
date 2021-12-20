@@ -582,15 +582,9 @@ export function init() {
     });
 
     elements.jump_glyph.addEventListener("change", (event) => {
-        let match = /^(?:U\+)?([0-9A-F]{4,6})$/i.exec(elements.jump_glyph.value);
-        if (match) {
-            editor_status.current_glyph = Number.parseInt(match[1], 16);
-            elements.jump_glyph.value = "";
-        } else if (elements.jump_glyph.value) {
-            editor_status.current_glyph = utils.from_utf16(elements.jump_glyph.value);
-            if (editor_status.current_glyph < 0 || editor_status.current_glyph > 0x1FFFF) {
-                editor_status.current_glyph = elements.jump_glyph.value.charCodeAt(0);
-            }
+        let codepoint = utils.parse_glyph_or_codepoint(elements.jump_glyph.value);
+        if (codepoint) {
+            editor_status.current_glyph = codepoint;
             elements.jump_glyph.value = "";
         }
     });

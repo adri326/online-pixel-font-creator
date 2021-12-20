@@ -1,6 +1,7 @@
 import * as utils from "./utils.js";
 import {font_data, set_font_data} from "./main.js";
 import * as convert from "./convert.js";
+import * as editor from "./editor.js";
 
 export const elements = utils.get_elements_by_id({
     button_resize: "button-resize",
@@ -22,6 +23,9 @@ export const elements = utils.get_elements_by_id({
     input_baseline: "input-baseline",
     input_spacing: "input-spacing",
     input_em_size: "input-em-size",
+
+    input_paste_glyph: "input-paste-glyph",
+    button_paste_glyph: "button-paste-glyph",
 
     import_menu: "import-menu",
 });
@@ -160,5 +164,25 @@ export function init() {
         fd.width = width;
         fd.height = height;
         fd.history = []; // Sorry
+    });
+
+    elements.button_paste_glyph.addEventListener("click", () => {
+        let codepoint = utils.parse_glyph_or_codepoint(elements.input_paste_glyph.value);
+        if (codepoint) {
+            elements.input_paste_glyph.value = "";
+            let fd = font_data();
+            let glyph = fd.glyphs.get(codepoint);
+            let current_glyph = fd.glyphs.get(editor.editor_status.current_glyph) || utils.new_glyph(fd.width, fd.height);
+            if (glyph) {
+                for (let y = 0; y < fd.height; y++) {
+                    for (let x = 0; x < fd.width; x++) {
+                        // TODO: use editor operations?
+                        current_glyph[y][x] = glyph[y][x];
+                    }
+                }
+                fd.glyphs.set(editor.editor_status.current_glyph, current_glyph);
+                fd.update("glyphs");
+            }
+        }
     });
 }

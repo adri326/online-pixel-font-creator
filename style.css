@@ -182,7 +182,6 @@ button, .button {
 
 #settings {
     background: var(--color-gray-medium);
-    padding: 2em 1em;
     font-family: monospace;
     font-size: 12pt;
 }
@@ -348,7 +347,44 @@ h2 {
 }
 
 #github-link {
-    position: absolute;
+    /* position: absolute;
     right: 1em;
-    top: 1em;
+    top: 1em; */
+    order: 1;
+}
+
+.tabbed .tab {
+    display: none;
+}
+
+.tabbed .tab.shown {
+    display: block;
+}
+
+#settings > div:first-of-type {
+    background: var(--color-gray-dark);
+    display: flex;
+    justify-content: space-between;
+    padding-top: 0.2em;
+    padding-bottom: 0.2em;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
+#settings > div:first-of-type button, #settings > div:first-of-type .button {
+    background: var(--color-gray-dark);
+    color: var(--color-white);
+}
+
+#settings > div:first-of-type button:hover, #settings > div:first-of-type .button:hover {
+    background: var(--color-primary-light);
+}
+
+#settings > div:first-of-type button:active, #settings > div:first-of-type .button:active,
+#settings > div:first-of-type button.active, #settings > div:first-of-type .button.active {
+    background: var(--color-primary-dark);
+}
+
+#settings > div:nth-of-type(2) {
+    padding: 0.5em 1em;
 }

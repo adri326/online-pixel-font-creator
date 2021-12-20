@@ -135,6 +135,7 @@ elements.import_as_json_png.addEventListener("click", async () => {
         let data_url = await utils.FileReaderPromise.readAsDataURL(elements.input_file.files[0]);
         let image = await utils.data_url_to_image(data_url);
         set_font_data(load_image(image, config));
+        close_import_menu();
     } catch (err) {
         elements.error.innerText = err.name + ": " + err.message;
         console.error(err);

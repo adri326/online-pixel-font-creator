@@ -40,37 +40,55 @@
     </div>
     <div id="resizer"><div></div></div>
     <div id="manipulate">
-        <div id="settings" class="settings">
-            <div id="github-link"><a class="button" href="https://github.com/adri326/online-pixel-font-creator/">Github</a></div>
-            <h2>Font name</h2>
-            <div title="The name of your font; choose a memorable one if you are going to use it as a system font.">Name: <input type="text" id="input-name" placeholder="My Amazing Font"></div>
-            <div title="Your name~">Author: <input type="text" id="input-author" placeholder="Anonymous"></div>
-            <div title="The style of the font is used to indicate the how bold or italic the font is.">Style: <input type="text" id="input-style" placeholder="Medium"></div>
-            <div></div>
-            <h2>Dimensions</h2>
+        <div id="settings" class="settings tabbed">
             <div>
-                Width: <input type="text" id="input-width" class="small" placeholder="8" title="The height of a character, in pixels.">
-                Height: <input type="text" id="input-height" class="small" placeholder="10" title="The width of a character, in pixels.">
-                <button id="button-resize">Apply!</button>
+                <a id="github-link" class="button" href="https://github.com/adri326/online-pixel-font-creator/">Github</a>
+                <div class="tab-titles">
+                    <button class="active" onclick="this.switch_tab('tab-font'); resize_canvas();">Font</button>
+                    <button class="" onclick="this.switch_tab('tab-glyph'); resize_canvas();">Glyph</button>
+                </div>
             </div>
-            <h2 title="This section lets you tweak how characters are spaced from each other. These are also shown as guides on the editor view.">Spacing</h2>
-            <div class="flex wrap">
-                <span title="The baseline is the line on which most of the characters sit. In pixels from the top of the picture.">Baseline: <input type="text" id="input-baseline" class="small" placeholder="8"></span>
-                <span title="How far up capital letters like 'T' go; relative to the baseline.">Ascend: <input type="text" id="input-ascend" class="small" placeholder="7"></span>
-                <span title="How far down letters like 'g' go; relative to the baseline.">Descend: <input type="text" id="input-descend" class="small" placeholder="-1"></span>
-                <span title="The horizontal spacing between two characters.">Spacing: <input type="text" id="input-spacing" class="small" placeholder="1"></span>
-                <span title="The width of the letter 'M'; use a multiple of this number as the font size to get a pixel-perfect result!">Em Size: <input type="text" id="input-em-size" class="small" placeholder="8"></span>
-            </div>
-            <h2>Saving/loading</h2>
+
             <div>
-                <button id="button-save" title="Saves to the browser's local storage; it will survive a restart but it might not last forever!">Save (browser)</button>
-                <button id="button-load" title="Loads from the browser's local storage.">Load (browser)</button>
-                <button id="button-clear" title="Reload the page afterwards to create a font from scratch!">Clear save</button>
-            </div>
-            <div>
-                <button id="button-download" title="Download the font in a text format.">Download</button>
-                <button id="button-download-otf" title="Download the font in OTF format.">Download (OTF)</button>
-                <button id="button-upload" title="Upload a font from your computer!">Upload</button>
+                <div id="tab-font" class="tab shown">
+                    <h2>Font name</h2>
+                    <div title="The name of your font; choose a memorable one if you are going to use it as a system font.">Name: <input type="text" id="input-name" placeholder="My Amazing Font"></div>
+                    <div title="Your name~">Author: <input type="text" id="input-author" placeholder="Anonymous"></div>
+                    <div title="The style of the font is used to indicate the how bold or italic the font is.">Style: <input type="text" id="input-style" placeholder="Medium"></div>
+                    <div></div>
+                    <h2>Dimensions</h2>
+                    <div>
+                        Width: <input type="text" id="input-width" class="small" placeholder="8" title="The height of a character, in pixels.">
+                        Height: <input type="text" id="input-height" class="small" placeholder="10" title="The width of a character, in pixels.">
+                        <button id="button-resize">Apply!</button>
+                    </div>
+                    <h2 title="This section lets you tweak how characters are spaced from each other. These are also shown as guides on the editor view.">Spacing</h2>
+                    <div class="flex wrap">
+                        <span title="The baseline is the line on which most of the characters sit. In pixels from the top of the picture.">Baseline: <input type="text" id="input-baseline" class="small" placeholder="8"></span>
+                        <span title="How far up capital letters like 'T' go; relative to the baseline.">Ascend: <input type="text" id="input-ascend" class="small" placeholder="7"></span>
+                        <span title="How far down letters like 'g' go; relative to the baseline.">Descend: <input type="text" id="input-descend" class="small" placeholder="-1"></span>
+                        <span title="The horizontal spacing between two characters.">Spacing: <input type="text" id="input-spacing" class="small" placeholder="1"></span>
+                        <span title="The width of the letter 'M'; use a multiple of this number as the font size to get a pixel-perfect result!">Em Size: <input type="text" id="input-em-size" class="small" placeholder="8"></span>
+                    </div>
+                    <h2>Saving/loading</h2>
+                    <div>
+                        <button id="button-save" title="Saves to the browser's local storage; it will survive a restart but it might not last forever!">Save (browser)</button>
+                        <button id="button-load" title="Loads from the browser's local storage.">Load (browser)</button>
+                        <button id="button-clear" title="Reload the page afterwards to create a font from scratch!">Clear save</button>
+                    </div>
+                    <div>
+                        <button id="button-download" title="Download the font in a text format.">Download</button>
+                        <button id="button-download-otf" title="Download the font in OTF format.">Download (OTF)</button>
+                        <button id="button-upload" title="Upload a font from your computer!">Upload</button>
+                    </div>
+                </div>
+                <div class="tab" id="tab-glyph">
+                    <h2>Paste another glyph</h2>
+                    <div>
+                        <input type="text" id="input-paste-glyph" placeholder="Glyph or codepoint" title="Type here a character or a unicode codepoint to paste into the current glyph.">
+                        <button id="button-paste-glyph">Paste glyph</button>
+                    </div>
+                </div>
             </div>
         </div>
         <div id="preview">
