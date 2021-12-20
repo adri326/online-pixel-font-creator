@@ -3,6 +3,10 @@
 A tool for creating, editing and exporting pixel fonts within the browser.
 [You can try it out here!](https://adri326.github.io/online-pixel-font-creator/index.html)
 
+Simply import one of the [included example fonts](https://github.com/adri326/online-pixel-font-creator/tree/main/examples) by pasting it into the text area in the "Upload" menu, and then selecting "Import as pixel font string (.pfs)".
+
+## Inspiration
+
 This tool is inspired by [YellowAfterLife's](https://yal.cc) [excellent tool for converting images into pixel fonts](https://yellowafterlife.itch.io/pixelfont).
 The font creation process using YellowAfterLife's tool has some downsides, which resolve around the need to put all of the glyphs into one growing image:
 
@@ -17,8 +21,9 @@ It features:
 - controls close to [Krita](https://krita.org)'s
 - visual guides for the different spacing options
 - saving in the browser using `localStorage` and locally using a simple file format
-- exporting to `OTF` (`TTF` to come), with an efficient path generation algorithm (TODO: flag to allow/disallow self-intersection)
+- exporting to `OTF` (`TTF` to come), with an efficient path generation algorithm
 - built-in preview of the glyphs
+- tools for resizing glyphs, copying glyphs to other glyphs, etc.
 
 ![Screenshot of the application](examples/screenshot.png)
 
