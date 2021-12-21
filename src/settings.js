@@ -63,23 +63,27 @@ export function update_name() {
 }
 
 export function load_font() {
-    let raw_data = window.localStorage.getItem("font_data");
-    if (raw_data) {
-        set_font_data(convert.deserialize_font(raw_data));
-        let fd = font_data();
+    try {
+        let raw_data = window.localStorage.getItem("font_data");
+        if (raw_data) {
+            set_font_data(convert.deserialize_font(raw_data));
+            let fd = font_data();
 
-        elements.input_width.value = fd.width;
-        elements.input_height.value = fd.height;
+            elements.input_width.value = fd.width;
+            elements.input_height.value = fd.height;
 
-        elements.input_baseline.value = fd.baseline;
-        elements.input_ascend.value = fd.ascend;
-        elements.input_descend.value = fd.descend;
-        elements.input_spacing.value = fd.spacing;
-        elements.input_em_size.value = fd.em_size;
+            elements.input_baseline.value = fd.baseline;
+            elements.input_ascend.value = fd.ascend;
+            elements.input_descend.value = fd.descend;
+            elements.input_spacing.value = fd.spacing;
+            elements.input_em_size.value = fd.em_size;
 
-        elements.input_name.value = fd.name || "My Amazing Font";
-        elements.input_author.value = fd.author || "Anonymous";
-        elements.input_style.value = fd.style || "Medium";
+            elements.input_name.value = fd.name || "My Amazing Font";
+            elements.input_author.value = fd.author || "Anonymous";
+            elements.input_style.value = fd.style || "Medium";
+        }
+    } catch (err) {
+        console.error(err);
     }
 }
 
@@ -155,7 +159,7 @@ export function init() {
         if (!elements.input_width.value && !elements.input_height.value || isNaN(width) || isNaN(height)) return;
 
         for (let [id, glyph] of fd.glyphs) {
-            let new_glyph = new Glyph(width, height);
+            let new_glyph = new Glyph(width, height, glyph.baseline);
             // TODO: inherit properties from glyph
             let sx = mode[1] === "l" ? width - fd.width : 0;
             let sy = mode[1] === "t" ? height - fd.height : 0;
@@ -182,7 +186,7 @@ export function init() {
             elements.input_paste_glyph.value = "";
             let fd = font_data();
             let glyph = fd.glyphs.get(codepoint);
-            let current_glyph = fd.glyphs.get(editor.editor_status.current_glyph) || new Glyph(fd.width, fd.height);
+            let current_glyph = fd.glyphs.get(editor.editor_status.current_glyph) || new Glyph(fd.width, fd.height, fd.baseline);
             if (glyph) {
                 for (let y = 0; y < fd.height; y++) {
                     for (let x = 0; x < fd.width; x++) {

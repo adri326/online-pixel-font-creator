@@ -1,8 +1,9 @@
 export class Glyph {
-    constructor(width, height) {
+    constructor(width, height, baseline) {
         this.data = new Array(width * height).fill(false);
         this.width = width;
         this.height = height;
+        this.baseline = baseline;
     }
 
     get(x, y) {
@@ -17,8 +18,8 @@ export class Glyph {
         }
     }
 
-    static from_pixels(pixels, width, height) {
-        let res = new Glyph(width, height);
+    static from_pixels(pixels, width, height, baseline) {
+        let res = new Glyph(width, height, baseline);
         pixels = pixels.slice(0, width * height);
 
         while (pixels.length < width * height) pixels.push(false);
@@ -28,7 +29,7 @@ export class Glyph {
     }
 
     static clone(glyph) {
-        let res = new Glyph(glyph.width, glyph.height);
+        let res = new Glyph(glyph.width, glyph.height, glyph.baseline);
         res.data = [...glyph.data];
         return res;
     }

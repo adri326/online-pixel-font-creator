@@ -24,6 +24,9 @@ export function serialize_font(font_data) {
             buffer[current_index++] = sum;
         }
         res += bytesToBase64(buffer);
+        if (glyph.width !== font_data.width || glyph.height !== font_data.height || glyph.baseline !== font_data.baseline) {
+            res += `:${glyph.width}:${glyph.height}:${glyph.baseline || font_data.baseline}`;
+        }
     }
 
     return res;
@@ -58,20 +61,29 @@ export function deserialize_font(raw) {
 
     for (let raw_glyph of iter) {
         if (!raw_glyph.trim()) continue;
-        let [id, b64] = raw_glyph.split(":");
+        let split = raw_glyph.split(":");
+        let [id, b64] = split;
         id = +id;
 
         let buffer = base64ToBytes(b64);
         let pixels = [];
 
-        for (let n = 0; n < font_data.width * font_data.height; n += buffer.BYTES_PER_ELEMENT * 8) {
-            let word = buffer[n / (buffer.BYTES_PER_ELEMENT * 8)];
-            for (let o = 0; o < buffer.BYTES_PER_ELEMENT * 8 && n + o < font_data.width * font_data.height; o++) {
-                pixels.push(!!(word & (1 << (7 - o))));
+        let width = split.length === 5 ? +split[2] : font_data.width;
+        let height = split.length === 5 ? +split[3] : font_data.height;
+        let baseline = split.length === 5 ? +split[4] : font_data.baseline;
+
+        const BITS = buffer.BYTES_PER_ELEMENT * 8;
+
+        for (let n = 0; n < width * height; n += BITS) {
+            let word = buffer[n / (BITS)];
+            for (let o = 0; o < BITS && n + o < width * height; o++) {
+                pixels.push(!!(word & (1 << (BITS - 1 - o))));
             }
         }
 
-        font_data.glyphs.set(id, Glyph.from_pixels(pixels, font_data.width, font_data.height));
+        let glyph = Glyph.from_pixels(pixels, width, height, baseline);
+
+        font_data.glyphs.set(id, glyph);
     }
 
     return font_data;
@@ -79,17 +91,17 @@ export function deserialize_font(raw) {
 
 export const PIXEL_SIZE = 128;
 
-function generate_path_for_region(region, font_data, path) {
+function generate_path_for_region(region, glyph, path) {
     let corners = [];
 
     function get(x, y) {
-        if (x >= 0 && x < font_data.width && y >= 0 && y < font_data.height) {
-            return region[x + y * font_data.width];
+        if (x >= 0 && x < glyph.width && y >= 0 && y < glyph.height) {
+            return region[x + y * glyph.width];
         } else return false;
     }
 
-    for (let y = 0; y <= font_data.height + 1; y++) {
-        for (let x = 0; x <= font_data.width + 1; x++) {
+    for (let y = 0; y <= glyph.height + 1; y++) {
+        for (let x = 0; x <= glyph.width + 1; x++) {
             let topleft = get(x - 1, y - 1);
             let topright = get(x, y - 1);
             let bottomleft = get(x - 1, y);
@@ -143,7 +155,7 @@ function generate_path_for_region(region, font_data, path) {
         let x = corners[n][0];
         let y = corners[n][1];
 
-        while (x >= 0 && x <= font_data.width + 1 && y >= 0 && y <= font_data.height + 1) {
+        while (x >= 0 && x <= glyph.width + 1 && y >= 0 && y <= glyph.height + 1) {
             x += dx;
             y += dy;
 
@@ -168,7 +180,7 @@ function generate_path_for_region(region, font_data, path) {
     }
 
     function coords(x, y) {
-        return [PIXEL_SIZE * x, PIXEL_SIZE * -(y - font_data.baseline)];
+        return [PIXEL_SIZE * x, PIXEL_SIZE * -(y - glyph.baseline)];
     }
 
     for (let loop of loops) {
@@ -183,11 +195,10 @@ function generate_path_for_region(region, font_data, path) {
 }
 
 export function generate_truetype(font_data) {
-    let visual_width = PIXEL_SIZE * (font_data.width + font_data.spacing);
     let notdef_glyph = new opentype.Glyph({
         name: ".notdef",
         unicode: 0,
-        advanceWidth: visual_width,
+        advanceWidth: PIXEL_SIZE * (font_data.width + font_data.spacing),
         path: new opentype.Path()
     });
 
@@ -197,20 +208,20 @@ export function generate_truetype(font_data) {
     for (let [id, glyph] of font_data.glyphs) {
         let name = unicode_data.get(id);
         let path = new opentype.Path();
-        let explored = new Array(font_data.width * font_data.height).fill(false);
+        let explored = new Array(glyph.width * glyph.height).fill(false);
         let is_empty = true;
 
         function bfs(sx, sy) {
             let open = [[sx, sy]];
-            let res = new Array(font_data.width * font_data.height).fill(false);
+            let res = new Array(glyph.width * glyph.height).fill(false);
             let current;
 
             while (current = open.pop()) {
                 let [x, y] = current;
-                res[x + y * font_data.width] = true;
+                res[x + y * glyph.width] = true;
                 for (let [dx, dy] of [[-1, 0], [0, -1], [1, 0], [0, 1]]) {
-                    if (x + dx < 0 || x + dx >= font_data.width || y + dy < 0 || y + dy >= font_data.height) continue;
-                    let index = x + dx + (y + dy) * font_data.width;
+                    if (x + dx < 0 || x + dx >= glyph.width || y + dy < 0 || y + dy >= glyph.height) continue;
+                    let index = x + dx + (y + dy) * glyph.width;
                     if (glyph.get(x + dx, y + dy) && !explored[index]) {
                         explored[index] = true;
                         open.push([x + dx, y + dy]);
@@ -221,14 +232,14 @@ export function generate_truetype(font_data) {
             return res;
         }
 
-        for (let y = 0; y < font_data.height; y++) {
-            for (let x = 0; x < font_data.width; x++) {
-                if (!explored[x + y * font_data.width] && glyph.get(x, y)) {
+        for (let y = 0; y < glyph.height; y++) {
+            for (let x = 0; x < glyph.width; x++) {
+                if (!explored[x + y * glyph.width] && glyph.get(x, y)) {
                     is_empty = false;
-                    explored[x + y * font_data.width] = true;
-                    generate_path_for_region(bfs(x, y), font_data, path);
+                    explored[x + y * glyph.width] = true;
+                    generate_path_for_region(bfs(x, y), glyph, path);
                 } else {
-                    explored[x + y * font_data.width] = true;
+                    explored[x + y * glyph.width] = true;
                 }
             }
         }
@@ -237,7 +248,7 @@ export function generate_truetype(font_data) {
             glyphs.push(new opentype.Glyph({
                 name,
                 unicode: id,
-                advanceWidth: visual_width,
+                advanceWidth: PIXEL_SIZE * (glyph.width + font_data.spacing),
                 path,
             }));
         }
@@ -273,7 +284,7 @@ export function load_truetype(font, width, height, em_size, baseline, spacing, n
         glyph.draw(ctx, 0, baseline, em_size);
 
         let data = ctx.getImageData(0, 0, width, height).data;
-        let table = new Glyph(width, height);
+        let table = new Glyph(width, height, baseline);
 
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
@@ -332,7 +343,7 @@ export function load_image(image, config) {
             let id = config.glyphmap[y][x];
             let sx = x * (config.width + config.separation_x) + config.offset_x;
             let sy = y * (config.height + config.separation_y) + config.offset_y;
-            let glyph = new Glyph(config.width, config.height);
+            let glyph = new Glyph(config.width, config.height, config.baseline);
 
             for (let dy = 0; dy < config.height; dy++) {
                 for (let dx = 0; dx < config.width; dx++) {

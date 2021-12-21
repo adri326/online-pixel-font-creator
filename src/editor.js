@@ -138,7 +138,7 @@ function editor_place_pixel(x, y) {
         editor_status.pixels_covered.add(`${px},${py}`);
         let current_glyph = fd.glyphs.get(editor_status.current_glyph);
         if (!current_glyph) {
-            current_glyph = new Glyph(fd.width, fd.height);
+            current_glyph = new Glyph(fd.width, fd.height, fd.baseline);
             fd.glyphs.set(editor_status.current_glyph, current_glyph);
             fd.update("glyphs");
         }
@@ -259,7 +259,7 @@ export function editor_undo() {
         fd.history.splice(last_glyph, 1);
         fd.update("history");
     } else if (last_glyph !== -1) {
-        fd.glyphs.set(editor_status.current_glyph, new Glyph(fd.width, fd.height));
+        fd.glyphs.set(editor_status.current_glyph, new Glyph(fd.width, fd.height, fd.baseline));
         fd.history.splice(last_glyph, 1);
         fd.update("history");
     }
@@ -340,16 +340,22 @@ export function draw() {
     editor_ctx.fillStyle = COLOR_BG;
     editor_ctx.fillRect(0, 0, editor_canvas.width, editor_canvas.height);
 
+    let current_glyph = fd.glyphs.get(editor_status.current_glyph);
+
+    let width = current_glyph ? current_glyph.width : fd.width;
+    let height = current_glyph ? current_glyph.height : fd.height;
+    let baseline = current_glyph ? current_glyph.baseline : fd.baseline;
+
     function editor_pos(x, y) {
         return [
-            x * editor_status.pixel_size + editor_status.cx + (editor_canvas.width - fd.width * editor_status.pixel_size) / 2,
-            y * editor_status.pixel_size + editor_status.cy + (editor_canvas.height - fd.height * editor_status.pixel_size) / 2
+            x * editor_status.pixel_size + editor_status.cx + (editor_canvas.width - width * editor_status.pixel_size) / 2,
+            y * editor_status.pixel_size + editor_status.cy + (editor_canvas.height - height * editor_status.pixel_size) / 2
         ];
     }
 
     // Adds 0.5 to x and y to produce pixel-perfect lines
-    function offset_half([x, y]) {
-        return [Math.round(x) + 0.5, Math.round(y) + 0.5];
+    function offset_half([x, y], offset_x = true, offset_y = true) {
+        return [Math.round(x) + (offset_x ? 0.5 : 1), Math.round(y) + (offset_y ? 0.5 : 1)];
     }
 
     function round([x, y]) {
@@ -378,25 +384,24 @@ export function draw() {
 
     // Draw background
     editor_ctx.fillStyle = COLOR_PIXEL_WHITE;
-    if (editor_status.pixel_size * Math.max(fd.width, fd.height) <= 640) {
+    if (editor_status.pixel_size * Math.max(width, height) <= 640) {
         editor_ctx.shadowColor = COLOR_GRAY_DARK + "80";
         editor_ctx.shadowOffsetX = 0;
         editor_ctx.shadowOffsetY = editor_status.pixel_size * .25;
         editor_ctx.shadowBlur = editor_status.pixel_size * .75;
-        rect(0, 0, fd.width, fd.height);
+        rect(0, 0, width, height);
         editor_ctx.shadowColor = "transparent";
     } else {
         // Drop shadows are disabled when zooming in too much (or else it lags the browser)
-        rect(0, 0, fd.width, fd.height);
+        rect(0, 0, width, height);
     }
 
-    let current_glyph = fd.glyphs.get(editor_status.current_glyph);
 
     // Draw pixels
     if (current_glyph) {
         editor_ctx.fillStyle = COLOR_PIXEL_BLACK;
-        for (let y = 0; y < fd.height; y++) {
-            for (let x = 0; x < fd.width; x++) {
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
                 if (current_glyph.get(x, y)) {
                     rect(x, y, x + 1, y + 1);
                 }
@@ -421,14 +426,14 @@ export function draw() {
 
     // Draw grid
     editor_ctx.beginPath();
-    for (let x = 0; x <= fd.width; x++) {
+    for (let x = 0; x <= width; x++) {
         editor_ctx.moveTo(...offset_half(editor_pos(x, 0)));
-        editor_ctx.lineTo(...offset_half(editor_pos(x, fd.height)));
+        editor_ctx.lineTo(...offset_half(editor_pos(x, height)));
     }
 
-    for (let y = 0; y <= fd.height; y++) {
+    for (let y = 0; y <= height; y++) {
         editor_ctx.moveTo(...offset_half(editor_pos(0, y)));
-        editor_ctx.lineTo(...offset_half(editor_pos(fd.width, y)));
+        editor_ctx.lineTo(...offset_half(editor_pos(width, y)));
     }
 
     editor_ctx.lineWidth = 1;
@@ -438,24 +443,60 @@ export function draw() {
     // Draw guides
 
     editor_ctx.beginPath();
-    editor_ctx.moveTo(...offset_half(editor_pos(0, fd.baseline)));
-    editor_ctx.lineTo(...offset_half(editor_pos(fd.width, fd.baseline)));
-
-    editor_ctx.lineWidth = 3;
-    editor_ctx.strokeStyle = COLOR_ALT_LIGHT;
-    editor_ctx.stroke();
-
-    editor_ctx.beginPath();
-    editor_ctx.moveTo(...offset_half(editor_pos(0, fd.baseline - fd.descend)));
-    editor_ctx.lineTo(...offset_half(editor_pos(fd.width, fd.baseline - fd.descend)));
-    editor_ctx.moveTo(...offset_half(editor_pos(0, fd.baseline - fd.ascend)));
-    editor_ctx.lineTo(...offset_half(editor_pos(fd.width, fd.baseline - fd.ascend)));
+    editor_ctx.moveTo(...offset_half(editor_pos(0, baseline - fd.descend)));
+    editor_ctx.lineTo(...offset_half(editor_pos(width, baseline - fd.descend)));
+    editor_ctx.moveTo(...offset_half(editor_pos(0, baseline - fd.ascend)));
+    editor_ctx.lineTo(...offset_half(editor_pos(width, baseline - fd.ascend)));
     editor_ctx.moveTo(...offset_half(editor_pos(fd.em_size, 0)));
-    editor_ctx.lineTo(...offset_half(editor_pos(fd.em_size, fd.height)));
+    editor_ctx.lineTo(...offset_half(editor_pos(fd.em_size, height)));
 
     editor_ctx.lineWidth = 3;
     editor_ctx.strokeStyle = COLOR_GRID;
     editor_ctx.stroke();
+
+    // Connect guides to the main grid if they extend past it
+    editor_ctx.beginPath();
+    if (baseline - fd.descend > height) {
+        editor_ctx.moveTo(...offset_half(editor_pos(0, height)));
+        editor_ctx.lineTo(...offset_half(editor_pos(0, baseline - fd.descend)));
+
+        editor_ctx.moveTo(...offset_half(editor_pos(width, height)));
+        editor_ctx.lineTo(...offset_half(editor_pos(width, baseline - fd.descend)));
+    }
+
+    if (baseline - fd.ascend < 0) {
+        editor_ctx.moveTo(...offset_half(editor_pos(0, 0)));
+        editor_ctx.lineTo(...offset_half(editor_pos(0, baseline - fd.ascend)));
+
+        editor_ctx.moveTo(...offset_half(editor_pos(width, 0)));
+        editor_ctx.lineTo(...offset_half(editor_pos(width, baseline - fd.ascend)));
+    }
+
+    if (fd.em_size > width) {
+        editor_ctx.moveTo(...offset_half(editor_pos(width, 0)));
+        editor_ctx.lineTo(...offset_half(editor_pos(fd.em_size, 0)));
+
+        editor_ctx.moveTo(...offset_half(editor_pos(width, height)));
+        editor_ctx.lineTo(...offset_half(editor_pos(fd.em_size, height)));
+    }
+
+    editor_ctx.lineWidth = 1;
+    editor_ctx.setLineDash([Math.round(editor_status.pixel_size / 8), Math.round(editor_status.pixel_size / 8)]);
+    editor_ctx.stroke();
+
+    editor_ctx.beginPath();
+    editor_ctx.moveTo(...offset_half(editor_pos(0, baseline), false, true));
+    editor_ctx.lineTo(...offset_half(editor_pos(width, baseline), false, true));
+
+    editor_ctx.lineWidth = 3;
+    editor_ctx.strokeStyle = COLOR_ALT_LIGHT;
+    if (fd.descend === 0) {
+        editor_ctx.setLineDash([Math.round(editor_status.pixel_size / 8), Math.round(editor_status.pixel_size / 8)]);
+    } else {
+        editor_ctx.setLineDash([]);
+    }
+    editor_ctx.stroke();
+    editor_ctx.setLineDash([]);
 
     // Draw next and previous characters
 
@@ -491,13 +532,13 @@ export function draw() {
         let drew_pixel = false;
         if (current_glyph) {
             editor_ctx.fillStyle = COLOR_NEIGHBORS;
-            for (let dy = 0; dy < fd.height; dy++) {
-                for (let dx = 0; dx < fd.width; dx++) {
+            for (let dy = 0; dy < current_glyph.height; dy++) {
+                for (let dx = 0; dx < current_glyph.width; dx++) {
                     if (!current_glyph.get(dx, dy)) continue;
                     drew_pixel = true;
                     editor_ctx.fillRect(
                         x + dx * PREVIEW_MULT,
-                        y + dy * PREVIEW_MULT,
+                        y + fd.baseline - current_glyph.baseline + dy * PREVIEW_MULT,
                         PREVIEW_MULT,
                         PREVIEW_MULT
                     );
