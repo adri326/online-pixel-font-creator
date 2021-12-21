@@ -35,13 +35,13 @@ function preview_draw_glyph(glyph, codepoint, x, y) {
 
     // Very crude occlusion
     if (
-        sx >= preview_canvas.width || sx + fd.width * pixel_size < 0
-        || sy >= preview_canvas.height || sy + fd.height * pixel_size < 0
+        sx >= preview_canvas.width || sx + glyph.width * pixel_size < 0
+        || sy >= preview_canvas.height || sy + glyph.height * pixel_size < 0
     ) return;
 
     preview_ctx.fillStyle = "black";
-    for (let dy = 0; dy < fd.height; dy++) {
-        for (let dx = 0; dx < fd.width; dx++) {
+    for (let dy = 0; dy < glyph.height; dy++) {
+        for (let dx = 0; dx < glyph.width; dx++) {
             if (!glyph.get(dx, dy)) continue;
             let x1 = Math.round(sx + dx * pixel_size);
             let y1 = Math.round(sy + dy * pixel_size);

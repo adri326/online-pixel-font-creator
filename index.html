@@ -96,6 +96,23 @@
                         <input type="text" id="input-paste-glyph" placeholder="Glyph or codepoint" title="Type here a character or a unicode codepoint to paste into the current glyph.">
                         <button id="button-paste-glyph">Paste glyph</button>
                     </div>
+                    <h2>Glyph-specific dimensions</h2>
+                    <div class="pad-vertical">
+                        Where to add blank pixels: <span class="button"><select id="select-glyph-resize-mode">
+                            <option value="tl">Top-left</option>
+                            <option value="tr">Top-right</option>
+                            <option value="bl">Bottom-left</option>
+                            <option value="br">Bottom-right</option>
+                        </select><i>&#x25bc;</i></span>
+                    </div>
+                    <div>
+                        Width: <input type="text" id="input-glyph-width" class="small" placeholder="8" title="The height of the current character, in pixels.">
+                        Height: <input type="text" id="input-glyph-height" class="small" placeholder="10" title="The width of the current character, in pixels.">
+                        <button id="button-glyph-resize">Apply!</button>
+                    </div>
+                    <div>
+                        Baseline: <input type="text" id="input-glyph-baseline" class="small" placeholder="8" title="The baseline of the current character; in pixels measured from the top of the texture.">
+                    </div>
                 </div>
             </div>
         </div>

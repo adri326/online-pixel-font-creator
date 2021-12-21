@@ -13,7 +13,7 @@ export function serialize_font(font_data) {
 
     for (let [id, glyph] of font_data.glyphs) {
         res += `\n${id}:`;
-        let buffer = new Uint8Array(Math.ceil(font_data.width * font_data.height / 8 / Uint8Array.BYTES_PER_ELEMENT));
+        let buffer = new Uint8Array(Math.ceil(glyph.width * glyph.height / 8 / Uint8Array.BYTES_PER_ELEMENT));
         let pixels = glyph.data;
         let current_index = 0;
         for (let n = 0; n < pixels.length; n += Uint8Array.BYTES_PER_ELEMENT * 8) {

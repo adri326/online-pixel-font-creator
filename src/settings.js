@@ -28,6 +28,11 @@ export const elements = utils.get_elements_by_id({
 
     input_paste_glyph: "input-paste-glyph",
     button_paste_glyph: "button-paste-glyph",
+    input_glyph_width: "input-glyph-width",
+    input_glyph_height: "input-glyph-height",
+    button_glyph_resize: "button-glyph-resize",
+    select_glyph_resize: "select-glyph-resize-mode",
+    input_glyph_baseline: "input-glyph-baseline",
 
     import_menu: "import-menu",
 });
@@ -40,6 +45,10 @@ let spacing_inputs = new Map([
     ["em_size", elements.input_em_size],
 ]);
 
+let glyph_spacing_inputs = new Map([
+    ["baseline", elements.input_glyph_baseline]
+]);
+
 export function update_spacing() {
     let fd = font_data();
     for (let [key, input] of spacing_inputs) {
@@ -47,6 +56,20 @@ export function update_spacing() {
             fd[key] = +input.value;
         }
     }
+}
+
+export function update_glyph_spacing() {
+    let fd = font_data();
+    let current_glyph = fd.glyphs.get(editor.editor_status.current_glyph) || new Glyph(fd.width, fd.height, fd.baseline);
+
+    for (let [key, input] of glyph_spacing_inputs) {
+        if (input.value && !isNaN(+input.value) && current_glyph[key] !== +input.value) {
+            current_glyph[key] = +input.value;
+        }
+    }
+
+    fd.glyphs.set(editor.editor_status.current_glyph, current_glyph);
+    fd.update("glyphs");
 }
 
 export function update_name() {
@@ -102,6 +125,11 @@ export function read_from_font() {
     elements.input_name.value = fd.name || "My Amazing Font";
     elements.input_author.value = fd.author || "Anonymous";
     elements.input_style.value = fd.style || "Medium";
+
+    let current_glyph = fd.glyphs.get(editor.editor_status.current_glyph);
+    elements.input_glyph_width.value = current_glyph ? current_glyph.width : fd.width;
+    elements.input_glyph_height.value = current_glyph ? current_glyph.height : fd.height;
+    elements.input_glyph_baseline.value = current_glyph ? current_glyph.baseline : fd.baseline;
 }
 
 export function save_font(flash_button = false) {
@@ -117,9 +145,14 @@ export function save_font(flash_button = false) {
 export function init() {
     let fd = font_data();
 
-    for (let [key, input] of spacing_inputs) {
+    for (let [_, input] of spacing_inputs) {
         input.addEventListener("change", update_spacing);
         input.addEventListener("keyup", update_spacing);
+    }
+
+    for (let [_, input] of glyph_spacing_inputs) {
+        input.addEventListener("change", update_glyph_spacing);
+        input.addEventListener("keyup", update_glyph_spacing);
     }
 
     elements.input_name.addEventListener("change", update_name);
@@ -159,10 +192,13 @@ export function init() {
         if (!elements.input_width.value && !elements.input_height.value || isNaN(width) || isNaN(height)) return;
 
         for (let [id, glyph] of fd.glyphs) {
+            if (glyph.width !== fd.width || glyph.height !== fd.height || glyph.baseline !== fd.baseline) {
+                continue; // Skip already-resized glyphs
+            }
             let new_glyph = new Glyph(width, height, glyph.baseline);
             // TODO: inherit properties from glyph
             let sx = mode[1] === "l" ? width - fd.width : 0;
-            let sy = mode[1] === "t" ? height - fd.height : 0;
+            let sy = mode[0] === "t" ? height - fd.height : 0;
 
             for (let y = 0; y < fd.height; y++) {
                 for (let x = 0; x < fd.width; x++) {
@@ -178,6 +214,40 @@ export function init() {
         fd.width = width;
         fd.height = height;
         fd.history = []; // Sorry
+    });
+
+    elements.button_glyph_resize.addEventListener("click", () => {
+        let fd = font_data();
+        let width = +(elements.input_glyph_width.value || 8);
+        let height = +(elements.input_glyph_height.value || 8);
+        let mode = elements.select_glyph_resize.value;
+
+        if (!elements.input_width.value && !elements.input_height.value || isNaN(width) || isNaN(height)) return;
+
+        let glyph = fd.glyphs.get(editor.editor_status.current_glyph);
+        if (glyph) {
+            let new_glyph = new Glyph(width, height, glyph.baseline);
+            // TODO: inherit properties from glyph
+            let sx = mode[1] === "l" ? width - glyph.width : 0;
+            let sy = mode[0] === "t" ? height - glyph.height : 0;
+
+            for (let y = 0; y < glyph.height; y++) {
+                for (let x = 0; x < glyph.width; x++) {
+                    new_glyph.set(sx + x, sy + y, glyph.get(x, y));
+                }
+            }
+
+            if (mode[0] === "t") {
+                new_glyph.baseline += height - glyph.height;
+            }
+
+            fd.glyphs.set(editor.editor_status.current_glyph, new_glyph);
+        } else {
+            fd.glyphs.set(editor.editor_status.current_glyph, new Glyph(width, height, fd.baseline));
+        }
+        fd.update("glyphs");
+
+        fd.history = fd.history.filter(entry => entry.id !== editor.editor_status.current_glyph); // Sorry
     });
 
     elements.button_paste_glyph.addEventListener("click", () => {
@@ -197,6 +267,17 @@ export function init() {
                 fd.glyphs.set(editor.editor_status.current_glyph, current_glyph);
                 fd.update("glyphs");
             }
+        }
+    });
+
+    font_data().listen((target, property) => {
+        if (!property || property === "glyph" || property === "baseline" || property === "width" || property === "height") {
+            read_from_font();
+        }
+    });
+    editor.editor_status.listen((target, property) => {
+        if (property === "baseline" || property === "current_glyph") {
+            read_from_font();
         }
     });
 }

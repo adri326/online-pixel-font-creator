@@ -112,14 +112,17 @@ export const editor_status = _editor_status.proxy;
 
 function editor_get_pixel(x, y) {
     let fd = font_data();
+    let current_glyph = fd.glyphs.get(editor_status.current_glyph);
+    let width = current_glyph ? current_glyph.width : fd.width;
+    let height = current_glyph ? current_glyph.height : fd.height;
 
     return [
         Math.floor(
-            (x - editor_status.cx - (editor_canvas.width - fd.width * editor_status.pixel_size) / 2)
+            (x - editor_status.cx - (editor_canvas.width - width * editor_status.pixel_size) / 2)
             / editor_status.pixel_size
         ),
         Math.floor(
-            (y - editor_status.cy - (editor_canvas.height - fd.height * editor_status.pixel_size) / 2)
+            (y - editor_status.cy - (editor_canvas.height - height * editor_status.pixel_size) / 2)
             / editor_status.pixel_size
         ),
     ];
@@ -127,7 +130,10 @@ function editor_get_pixel(x, y) {
 
 function editor_pixel_inside(px, py) {
     let fd = font_data();
-    return px >= 0 && py >= 0 && px < fd.width && py < fd.height;
+    let current_glyph = fd.glyphs.get(editor_status.current_glyph);
+    let width = current_glyph ? current_glyph.width : fd.width;
+    let height = current_glyph ? current_glyph.height : fd.height;
+    return px >= 0 && py >= 0 && px < width && py < height;
 }
 
 function editor_place_pixel(x, y) {
