@@ -168,10 +168,11 @@ export function init() {
     });
 
     elements.button_download.addEventListener("click", () => {
-        let url = window.URL.createObjectURL(new Blob([convert.serialize_font(font_data())], {type: "text/plain"}));
+        let fd = font_data();
+        let url = window.URL.createObjectURL(new Blob([convert.serialize_font(fd)], {type: "text/plain"}));
         let a = document.createElement("a");
         a.href = url;
-        a.download = "font.pfs";
+        a.download = `${fd.name.replace(/[^a-zA-Z0-9]/g, "")}-${fd.style.replace(/[^a-zA-Z0-9]/g, "")}.pfs`;
         a.click();
     });
 

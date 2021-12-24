@@ -9,7 +9,8 @@ export const editor_info = document.getElementById("editor-info");
 
 export const PREVIEW_MULT = 2;
 export const CURRENT_SIZE = 128;
-export const CURRENT_PADDING = 16;
+export const CURRENT_PADDING_LEFT = 16;
+export const CURRENT_PADDING_TOP = 64;
 
 const ZOOM_STRENGTH = 0.001;
 
@@ -60,6 +61,7 @@ HOTKEYS.set("D", () => {
 });
 HOTKEYS.set("p", () => editor_status.persistent_mode = MODE_MOVE);
 HOTKEYS.set("t", () => editor_status.persistent_mode = MODE_DRAG);
+HOTKEYS.set("A", editor_select_all);
 
 const elements = utils.get_elements_by_id({
     button_xor: "button-xor",
@@ -271,6 +273,21 @@ export function editor_undo() {
     }
 }
 
+export function editor_select_all() {
+    let fd = font_data();
+    let current_glyph = fd.glyphs.get(editor_status.current_glyph);
+    let width = current_glyph ? current_glyph.width : fd.width;
+    let height = current_glyph ? current_glyph.height : fd.height;
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+            editor_status.pixels_selected.add(`${x},${y}`);
+        }
+    }
+
+    editor_status.update("pixels_selected");
+}
+
 export function update_info() {
     function pad(str, length) {
         if (str.length < length) return '0'.repeat(length - str.length) + str;
@@ -330,6 +347,12 @@ export function keydown(event) {
         HOTKEYS.get(event.key)();
     } else if (event.ctrlKey) {
         if (event.key === "z") editor_undo();
+        if (event.key === "a") {
+            event.preventDefault();
+            event.returnValue = "";
+            editor_select_all();
+            return false;
+        }
     }
 }
 
@@ -386,7 +409,7 @@ export function draw() {
     editor_ctx.font = CURRENT_SIZE + "px monospace";
     editor_ctx.textAlign = "center";
     editor_ctx.textBaseline = "middle";
-    editor_ctx.fillText(utils.to_utf16(editor_status.current_glyph), CURRENT_SIZE / 2 + CURRENT_PADDING, CURRENT_SIZE / 2 + CURRENT_PADDING);
+    editor_ctx.fillText(utils.to_utf16(editor_status.current_glyph), CURRENT_SIZE / 2 + CURRENT_PADDING_LEFT, CURRENT_SIZE / 2 + CURRENT_PADDING_TOP);
 
     // Draw background
     editor_ctx.fillStyle = COLOR_PIXEL_WHITE;

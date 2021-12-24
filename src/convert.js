@@ -12,17 +12,23 @@ export function serialize_font(font_data) {
     res += `:${font_data.baseline}:${font_data.ascend}:${font_data.descend}:${font_data.spacing}:${font_data.em_size}`;
 
     for (let [id, glyph] of font_data.glyphs) {
-        res += `\n${id}:`;
         let buffer = new Uint8Array(Math.ceil(glyph.width * glyph.height / 8 / Uint8Array.BYTES_PER_ELEMENT));
         let pixels = glyph.data;
         let current_index = 0;
+        let has_pixel = false;
         for (let n = 0; n < pixels.length; n += Uint8Array.BYTES_PER_ELEMENT * 8) {
             let sum = 0;
             for (let o = 0; o < Uint8Array.BYTES_PER_ELEMENT * 8 && n + o < pixels.length; o++) {
-                if (pixels[n + o]) sum |= 1 << (7 - o);
+                if (pixels[n + o]) {
+                    has_pixel = true;
+                    sum |= 1 << (7 - o);
+                }
             }
             buffer[current_index++] = sum;
         }
+        if (!has_pixel) continue;
+
+        res += `\n${id}:`;
         res += bytesToBase64(buffer);
         if (glyph.width !== font_data.width || glyph.height !== font_data.height || glyph.baseline !== font_data.baseline) {
             res += `:${glyph.width}:${glyph.height}:${glyph.baseline || font_data.baseline}`;
