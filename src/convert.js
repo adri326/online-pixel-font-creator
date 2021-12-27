@@ -9,7 +9,7 @@ export function serialize_font(font_data) {
     res += font_data.author.replace(/\n/g, "\\n") + "\n";
     res += font_data.style.replace(/\n/g, "\\n") + "\n";
     res += `${font_data.width}:${font_data.height}`;
-    res += `:${font_data.baseline}:${font_data.ascend}:${font_data.descend}:${font_data.spacing}:${font_data.em_size}`;
+    res += `:${font_data.baseline}:${font_data.ascend}:${font_data.descend}:${font_data.spacing}:${font_data.em_size}:${font_data.left_offset}`;
 
     for (let [id, glyph] of font_data.glyphs) {
         let buffer = new Uint8Array(Math.ceil(glyph.width * glyph.height / 8 / Uint8Array.BYTES_PER_ELEMENT));
@@ -30,8 +30,8 @@ export function serialize_font(font_data) {
 
         res += `\n${id}:`;
         res += bytesToBase64(buffer);
-        if (glyph.width !== font_data.width || glyph.height !== font_data.height || glyph.baseline !== font_data.baseline) {
-            res += `:${glyph.width}:${glyph.height}:${glyph.baseline || font_data.baseline}`;
+        if (glyph.width !== font_data.width || glyph.height !== font_data.height || glyph.baseline !== font_data.baseline || glyph.left_offset !== font_data.left_offset) {
+            res += `:${glyph.width}:${glyph.height}:${glyph.baseline || font_data.baseline}:${glyph.left_offset || font_data.left_offset}`;
         }
     }
 
@@ -56,6 +56,7 @@ export function deserialize_font(raw) {
         descend: spacing[4],
         spacing: spacing[5],
         em_size: spacing[6],
+        left_offset: spacing[7] ?? 0,
 
         glyphs: new Map(),
         history: [],
@@ -74,9 +75,10 @@ export function deserialize_font(raw) {
         let buffer = base64ToBytes(b64);
         let pixels = [];
 
-        let width = split.length === 5 ? +split[2] : font_data.width;
-        let height = split.length === 5 ? +split[3] : font_data.height;
-        let baseline = split.length === 5 ? +split[4] : font_data.baseline;
+        let width = split.length >= 5 ? +split[2] : font_data.width;
+        let height = split.length >= 5 ? +split[3] : font_data.height;
+        let baseline = split.length >= 5 ? +split[4] : font_data.baseline;
+        let left_offset = split.length >= 6 ? +split[5] : font_data.left_offset;
 
         const BITS = buffer.BYTES_PER_ELEMENT * 8;
 
@@ -87,7 +89,7 @@ export function deserialize_font(raw) {
             }
         }
 
-        let glyph = Glyph.from_pixels(pixels, width, height, baseline);
+        let glyph = Glyph.from_pixels(pixels, width, height, baseline, left_offset);
 
         font_data.glyphs.set(id, glyph);
     }
@@ -186,7 +188,7 @@ function generate_path_for_region(region, glyph, path) {
     }
 
     function coords(x, y) {
-        return [PIXEL_SIZE * x, PIXEL_SIZE * -(y - glyph.baseline)];
+        return [PIXEL_SIZE * (x - glyph.left_offset), PIXEL_SIZE * -(y - glyph.baseline)];
     }
 
     for (let loop of loops) {
@@ -254,7 +256,7 @@ export function generate_truetype(font_data) {
             glyphs.push(new opentype.Glyph({
                 name,
                 unicode: id,
-                advanceWidth: PIXEL_SIZE * (glyph.width + font_data.spacing),
+                advanceWidth: PIXEL_SIZE * (glyph.width + font_data.spacing - glyph.left_offset),
                 path,
             }));
         }
@@ -272,7 +274,7 @@ export function generate_truetype(font_data) {
     return font;
 }
 
-export function load_truetype(font, width, height, em_size, baseline, spacing, name, author, style) {
+export function load_truetype(font, width, height, em_size, baseline, left_offset, spacing, name, author, style) {
     if (!font.supported) {
         throw new Error("Font is not supported!");
     }
@@ -287,10 +289,10 @@ export function load_truetype(font, width, height, em_size, baseline, spacing, n
         let id = glyph.unicode;
         ctx.clearRect(0, 0, width, height);
         ctx.fillStyle = "black";
-        glyph.draw(ctx, 0, baseline, em_size);
+        glyph.draw(ctx, left_offset, baseline, em_size);
 
         let data = ctx.getImageData(0, 0, width, height).data;
-        let table = new Glyph(width, height, baseline);
+        let table = new Glyph(width, height, baseline, left_offset);
 
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
@@ -349,7 +351,7 @@ export function load_image(image, config) {
             let id = config.glyphmap[y][x];
             let sx = x * (config.width + config.separation_x) + config.offset_x;
             let sy = y * (config.height + config.separation_y) + config.offset_y;
-            let glyph = new Glyph(config.width, config.height, config.baseline);
+            let glyph = new Glyph(config.width, config.height, config.baseline, config.left_offset);
 
             for (let dy = 0; dy < config.height; dy++) {
                 for (let dx = 0; dx < config.width; dx++) {
@@ -376,5 +378,6 @@ export function load_image(image, config) {
         em_size: config.em_size,
         ascend: config.ascend,
         descend: config.descend,
+        left_offset: config.left_offset,
     };
 }

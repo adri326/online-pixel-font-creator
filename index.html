@@ -73,6 +73,7 @@
                     <h2 title="This section lets you tweak how characters are spaced from each other. These are also shown as guides on the editor view.">Spacing</h2>
                     <div class="flex wrap">
                         <span title="The baseline is the line on which most of the characters sit. In pixels from the top of the picture.">Baseline: <input type="text" id="input-baseline" class="small" placeholder="8"></span>
+                        <span title="The left offset defines the vertical line where the character's bounding box begins. Anything left to that line will overlap with the previous characters. Measured in pixels.">Left offset: <input type="text" id="input-left-offset" class="small" placeholder="0"></span>
                         <span title="How far up capital letters like 'T' go; relative to the baseline.">Ascend: <input type="text" id="input-ascend" class="small" placeholder="7"></span>
                         <span title="How far down letters like 'g' go; relative to the baseline.">Descend: <input type="text" id="input-descend" class="small" placeholder="-1"></span>
                         <span title="The horizontal spacing between two characters.">Spacing: <input type="text" id="input-spacing" class="small" placeholder="1"></span>
@@ -112,6 +113,7 @@
                     </div>
                     <div>
                         Baseline: <input type="text" id="input-glyph-baseline" class="small" placeholder="8" title="The baseline of the current character; in pixels measured from the top of the texture.">
+                        Left offset: <input type="text" id="input-glyph-left-offset" class="small" placeholder="0" title="The left offset of the current character; in pixels measured from the left of the texture.">
                     </div>
                 </div>
             </div>

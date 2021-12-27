@@ -64,6 +64,8 @@ elements.import_as_truetype.addEventListener("click", () => {
                 throw new Error("Invalid baseline: expected integer, got " + config.get("baseline"));
             } else if (config.get("baseline") && !Number.isInteger(+config.get("baseline"))) {
                 throw new Error("Invalid baseline: expected integer, got " + config.get("baseline"));
+            } else if (config.get("left_offset") && !Number.isInteger(+config.get("left_offset"))) {
+                throw new Error("Invalid left_offset: expected integer, got " + config.get("left_offset"));
             }
 
             let reader = new FileReader();
@@ -75,6 +77,7 @@ elements.import_as_truetype.addEventListener("click", () => {
                         +config.get("height"),
                         +config.get("em_size"),
                         +config.get("baseline"),
+                        +config.get("left_offset"),
                         +(config.get("spacing") || "0"),
                         config.get("name"),
                         config.get("author"),
@@ -98,8 +101,8 @@ elements.import_as_truetype.addEventListener("click", () => {
         `width:\nheight:\n\n` +
         `# Then, specify the size of an em in pixels. With YellowAfterLife's pixel font converter, this is equal to the em size divided by the pixel size.\n` +
         `em_size:\n\n` +
-        `# Finally, specify the baseline of the font in pixels (measured from the top of the font).\n` +
-        `baseline:\n\n` +
+        `# Finally, specify the baseline and left offset of the font in pixels (measured from resp. the top and left of the font).\n` +
+        `left_offset: 0\nbaseline:\n\n` +
         `# You can optionally fill in the font spacing, name, author and style here. These will be read from the file otherwise.\n` +
         `spacing:\nname:\nauthor:\nstyle:\n`;
     }
@@ -129,7 +132,8 @@ elements.import_as_json_png.addEventListener("click", async () => {
             em_size: config_raw["font-em-square"] / config_raw["font-px-size"],
             ascend: config_raw["font-ascend"] / config_raw["font-px-size"],
             descend: config_raw["font-descend"] / config_raw["font-px-size"],
-            color: config_raw["glyph-color"]
+            color: config_raw["glyph-color"],
+            left_offset: 0,
         };
 
         let data_url = await utils.FileReaderPromise.readAsDataURL(elements.input_file.files[0]);

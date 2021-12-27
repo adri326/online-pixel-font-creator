@@ -25,6 +25,7 @@ export const elements = utils.get_elements_by_id({
     input_baseline: "input-baseline",
     input_spacing: "input-spacing",
     input_em_size: "input-em-size",
+    input_left_offset: "input-left-offset",
 
     input_paste_glyph: "input-paste-glyph",
     button_paste_glyph: "button-paste-glyph",
@@ -33,6 +34,7 @@ export const elements = utils.get_elements_by_id({
     button_glyph_resize: "button-glyph-resize",
     select_glyph_resize: "select-glyph-resize-mode",
     input_glyph_baseline: "input-glyph-baseline",
+    input_glyph_left_offset: "input-glyph-left-offset",
 
     import_menu: "import-menu",
 });
@@ -43,10 +45,12 @@ let spacing_inputs = new Map([
     ["descend", elements.input_descend],
     ["spacing", elements.input_spacing],
     ["em_size", elements.input_em_size],
+    ["left_offset", elements.input_left_offset],
 ]);
 
 let glyph_spacing_inputs = new Map([
-    ["baseline", elements.input_glyph_baseline]
+    ["baseline", elements.input_glyph_baseline],
+    ["left_offset", elements.input_glyph_left_offset],
 ]);
 
 export function update_spacing() {
@@ -121,6 +125,7 @@ export function read_from_font() {
     elements.input_descend.value = fd.descend;
     elements.input_spacing.value = fd.spacing;
     elements.input_em_size.value = fd.em_size;
+    elements.input_left_offset.value = fd.left_offset;
 
     elements.input_name.value = fd.name || "My Amazing Font";
     elements.input_author.value = fd.author || "Anonymous";
@@ -130,6 +135,7 @@ export function read_from_font() {
     elements.input_glyph_width.value = current_glyph ? current_glyph.width : fd.width;
     elements.input_glyph_height.value = current_glyph ? current_glyph.height : fd.height;
     elements.input_glyph_baseline.value = current_glyph ? current_glyph.baseline : fd.baseline;
+    elements.input_glyph_left_offset.value = current_glyph ? current_glyph.left_offset : fd.left_offset;
 }
 
 export function save_font(flash_button = false) {
@@ -227,7 +233,7 @@ export function init() {
 
         let glyph = fd.glyphs.get(editor.editor_status.current_glyph);
         if (glyph) {
-            let new_glyph = new Glyph(width, height, glyph.baseline);
+            let new_glyph = new Glyph(width, height, glyph.baseline, glyph.left_offset);
             // TODO: inherit properties from glyph
             let sx = mode[1] === "l" ? width - glyph.width : 0;
             let sy = mode[0] === "t" ? height - glyph.height : 0;
@@ -257,7 +263,7 @@ export function init() {
             elements.input_paste_glyph.value = "";
             let fd = font_data();
             let glyph = fd.glyphs.get(codepoint);
-            let current_glyph = fd.glyphs.get(editor.editor_status.current_glyph) || new Glyph(fd.width, fd.height, fd.baseline);
+            let current_glyph = fd.glyphs.get(editor.editor_status.current_glyph) || new Glyph(fd.width, fd.height, fd.baseline, fd.left_offset);
             if (glyph) {
                 for (let y = 0; y < fd.height; y++) {
                     for (let x = 0; x < fd.width; x++) {

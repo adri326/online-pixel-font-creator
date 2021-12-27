@@ -374,6 +374,7 @@ export function draw() {
     let width = current_glyph ? current_glyph.width : fd.width;
     let height = current_glyph ? current_glyph.height : fd.height;
     let baseline = current_glyph ? current_glyph.baseline : fd.baseline;
+    let left_offset = current_glyph ? current_glyph.left_offset : fd.left_offset;
 
     function editor_pos(x, y) {
         return [
@@ -476,8 +477,8 @@ export function draw() {
     editor_ctx.lineTo(...offset_half(editor_pos(width, baseline - fd.descend)));
     editor_ctx.moveTo(...offset_half(editor_pos(0, baseline - fd.ascend)));
     editor_ctx.lineTo(...offset_half(editor_pos(width, baseline - fd.ascend)));
-    editor_ctx.moveTo(...offset_half(editor_pos(fd.em_size, 0)));
-    editor_ctx.lineTo(...offset_half(editor_pos(fd.em_size, height)));
+    editor_ctx.moveTo(...offset_half(editor_pos(left_offset + fd.em_size, 0)));
+    editor_ctx.lineTo(...offset_half(editor_pos(left_offset + fd.em_size, height)));
 
     editor_ctx.lineWidth = 3;
     editor_ctx.strokeStyle = COLOR_GRID;
@@ -501,18 +502,19 @@ export function draw() {
         editor_ctx.lineTo(...offset_half(editor_pos(width, baseline - fd.ascend)));
     }
 
-    if (fd.em_size > width) {
+    if (left_offset + fd.em_size > width) {
         editor_ctx.moveTo(...offset_half(editor_pos(width, 0)));
-        editor_ctx.lineTo(...offset_half(editor_pos(fd.em_size, 0)));
+        editor_ctx.lineTo(...offset_half(editor_pos(left_offset + fd.em_size, 0)));
 
         editor_ctx.moveTo(...offset_half(editor_pos(width, height)));
-        editor_ctx.lineTo(...offset_half(editor_pos(fd.em_size, height)));
+        editor_ctx.lineTo(...offset_half(editor_pos(left_offset + fd.em_size, height)));
     }
 
     editor_ctx.lineWidth = 1;
     editor_ctx.setLineDash([Math.round(editor_status.pixel_size / 8), Math.round(editor_status.pixel_size / 8)]);
     editor_ctx.stroke();
 
+    // Draw baseline
     editor_ctx.beginPath();
     editor_ctx.moveTo(...offset_half(editor_pos(0, baseline), false, true));
     editor_ctx.lineTo(...offset_half(editor_pos(width, baseline), false, true));
@@ -526,6 +528,13 @@ export function draw() {
     }
     editor_ctx.stroke();
     editor_ctx.setLineDash([]);
+
+    // Draw left offset
+    editor_ctx.beginPath();
+    editor_ctx.moveTo(...offset_half(editor_pos(left_offset, 0), false, true));
+    editor_ctx.lineTo(...offset_half(editor_pos(left_offset, height), false, true));
+
+    editor_ctx.stroke();
 
     // Draw next and previous characters
 

@@ -13,6 +13,7 @@ let _font_data = new ProxyListener({
     descend: -1,
     spacing: 1,
     em_size: 8,
+    left_offset: 0,
     glyphs: new Map(),
     history: [],
 
@@ -29,6 +30,7 @@ export function set_font_data(font_data) {
     _font_data.revoke();
     _font_data = new ProxyListener(font_data, _font_data.listeners);
     _font_data.update();
+    window.font_data = _font_data.proxy;
     settings.read_from_font();
 }
 

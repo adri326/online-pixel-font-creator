@@ -30,7 +30,7 @@ export const preview_status = _preview_status.proxy;
 function preview_draw_glyph(glyph, codepoint, x, y) {
     let fd = font_data();
     let pixel_size = preview_status.pixel_size;
-    let sx = Math.round(preview_status.cx + x * pixel_size);
+    let sx = Math.round(preview_status.cx + (x - glyph.left_offset) * pixel_size);
     let sy = Math.round(preview_status.cy + (y * fd.height + fd.baseline - glyph.baseline) * pixel_size);
 
     // Very crude occlusion
@@ -69,7 +69,7 @@ export function draw() {
         let glyph = fd.glyphs.get(codepoint);
         if (glyph) {
             preview_draw_glyph(glyph, codepoint, x, y);
-            x += glyph.width + fd.spacing;
+            x += glyph.width + fd.spacing - glyph.left_offset;
         } else {
             x += fd.width + fd.spacing;
         }
