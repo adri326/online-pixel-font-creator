@@ -218,6 +218,10 @@ export function generate_truetype(font_data) {
         let path = new opentype.Path();
         let explored = new Array(glyph.width * glyph.height).fill(false);
         let is_empty = true;
+        let min_x = glyph.width;
+        let max_x = 0;
+        let min_y = glyph.height;
+        let max_y = 0;
 
         function bfs(sx, sy) {
             let open = [[sx, sy]];
@@ -242,6 +246,10 @@ export function generate_truetype(font_data) {
 
         for (let y = 0; y < glyph.height; y++) {
             for (let x = 0; x < glyph.width; x++) {
+                min_x = Math.min(min_x, x);
+                max_x = Math.max(max_x, x);
+                min_y = Math.min(min_y, y);
+                max_y = Math.max(max_y, y);
                 if (!explored[x + y * glyph.width] && glyph.get(x, y)) {
                     is_empty = false;
                     explored[x + y * glyph.width] = true;
@@ -253,12 +261,16 @@ export function generate_truetype(font_data) {
         }
 
         if (!is_empty) {
-            glyphs.push(new opentype.Glyph({
+            let otf_glyph = new opentype.Glyph({
                 name,
                 unicode: id,
                 advanceWidth: PIXEL_SIZE * (glyph.width + font_data.spacing - glyph.left_offset),
                 path,
-            }));
+            });
+
+            // opentype.js doesn't let you set this value :(
+            otf_glyph.leftSideBearing = Math.min(min_x - glyph.left_offset, 0) * PIXEL_SIZE;
+            glyphs.push(otf_glyph);
         }
     }
 
