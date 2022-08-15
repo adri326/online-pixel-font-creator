@@ -10,9 +10,9 @@ Simply import one of the [included example fonts](https://github.com/adri326/onl
 This tool is inspired by [YellowAfterLife's](https://yal.cc) [excellent tool for converting images into pixel fonts](https://yellowafterlife.itch.io/pixelfont).
 The font creation process using YellowAfterLife's tool has some downsides, which resolve around the need to put all of the glyphs into one growing image:
 
-- Growing the image horizontally is tricky, as suddenly you'll end up with `Ы` next to `G`, which makes further organization harder.
+- Growing the image horizontally is tricky, as the new characters added on the right will end up being unrelated to the previous ones (eg. having `Ы` placed next to `G`), which makes further organization harder.
 - Growing the image vertically has the consequence of ending up with an image that is hard to navigate around in an image editor.
-- You need to think about where each glyph will be in the image; if you sporadically add glyphs that you need, then you might forget where you put them (and you end up with a mess like [unicode's double-struck characters](https://altcodeunicode.com/alt-codes-math-symbols-double-struck-letters/))
+- You need to think about where each glyph will be in the image; if you sporadically add glyphs that you need, then you might forget where you put them (and you end up with messy indices like [unicode's double-struck characters](https://altcodeunicode.com/alt-codes-math-symbols-double-struck-letters/))
 - The have to alternate between editing the font in an image editor and the converter to preview the font
 
 This tool was thus created to remove the need to lay out glyphs in a 2D image and to alternate between two programs.
