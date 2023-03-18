@@ -1,0 +1,32 @@
+{
+  "name": "pixel-font-editor",
+  "version": "1.0.0",
+  "description": "A tool for creating, editing and exporting pixel fonts within the browser.",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "serve": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adri326/online-pixel-font-creator.git"
+  },
+  "author": "Shad Amethyst",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/adri326/online-pixel-font-creator/issues"
+  },
+  "homepage": "https://github.com/adri326/online-pixel-font-creator#readme",
+  "dependencies": {
+    "@shadryx/pptk": "~0.1.6",
+    "solid-js": "1.6.x"
+  },
+  "devDependencies": {
+    "@types/node": "^18.14.2",
+    "typescript": "^4.9.5",
+    "vite": "^4.1.1",
+    "vite-plugin-solid": "^2.5.0"
+  }
+}

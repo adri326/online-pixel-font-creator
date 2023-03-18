@@ -2,6 +2,7 @@
 *.ttf
 *.otf
 settings.json
+node_modules/
 
 # Temporary
 charset.txt

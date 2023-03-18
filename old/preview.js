@@ -1,27 +1,22 @@
 import * as utils from "./utils.js";
 import {font_data} from "./main.js";
+import * as pptk from "https://cdn.skypack.dev/@shadryx/pptk@0.1.6?dts";
 
 export const ZOOM_STRENGTH = 0.001;
 
 export const preview_canvas = document.getElementById("preview-canvas");
+pptk.attachCanvas(preview_canvas);
 export const preview_ctx = preview_canvas.getContext("2d");
 export const preview_prompt = document.getElementById("preview-prompt");
 
 const _preview_status = new utils.ProxyListener({
     cx: 12,
-    old_cx: 12,
     cy: 12,
-    old_cy: 12,
     text: preview_prompt.value || "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG\nthe quick brown fox jumps over the lazy dog",
 
-    mouse_x: 0,
-    mouse_y: 0,
-    mouse_down: false,
-    hovered: false,
-
-    zoom: 0,
+    logScale: 0,
     get pixel_size() {
-        return Math.pow(2, Math.round(this.zoom * 2) / 2);
+        return Math.pow(2, Math.round(this.logScale * 2) / 2);
     }
 });
 
@@ -78,56 +73,19 @@ export function draw() {
 
 export function init() {
     preview_status.listen((target, property) => {
-        if (property === "text" || property === "cx" || property === "cy" || property === "zoom") {
+        if (property === "text" || property === "cx" || property === "cy" || property === "logScale") {
             utils.schedule_frame(draw);
         }
     });
     font_data().listen(() => utils.schedule_frame(draw));
 
-    preview_canvas.addEventListener("wheel", (event) => {
-        if (preview_status.zoom - event.deltaY * ZOOM_STRENGTH >= 0) {
-            preview_status.cx /= Math.pow(2, event.deltaY * ZOOM_STRENGTH);
-            preview_status.old_cx = preview_status.cx;
-            preview_status.cy /= Math.pow(2, event.deltaY * ZOOM_STRENGTH);
-            preview_status.old_cy = preview_status.cy;
-            preview_status.zoom -= event.deltaY * ZOOM_STRENGTH;
-        } else {
-            preview_status.cx /= Math.pow(2, -preview_status.zoom);
-            preview_status.old_cx = preview_status.cx;
-            preview_status.cy /= Math.pow(2, -preview_status.zoom);
-            preview_status.old_cy = preview_status.cy;
-            preview_status.zoom = 0;
+    pptk.attachPannable(preview_canvas, {
+        scrollSensitivity: ZOOM_STRENGTH,
+        onUpdate(state) {
+            preview_status.cx = state.dx;
+            preview_status.cy = state.dy;
+            preview_status.logScale = state.logScale;
         }
-    });
-
-    preview_canvas.addEventListener("mousedown", (event) => {
-        preview_status.mouse_x = event.clientX;
-        preview_status.mouse_y = event.clientY;
-        preview_status.mouse_down = true;
-    });
-
-    preview_canvas.addEventListener("mouseup", (event) => {
-        preview_status.mouse_down = false;
-        preview_status.old_cx = preview_status.cx;
-        preview_status.old_cy = preview_status.cy;
-    });
-
-    preview_canvas.addEventListener("mousemove", (event) => {
-        if (preview_status.mouse_down) {
-            preview_status.cx = preview_status.old_cx + event.clientX - preview_status.mouse_x;
-            preview_status.cy = preview_status.old_cy + event.clientY - preview_status.mouse_y;
-
-            draw();
-        }
-    });
-
-    preview_canvas.addEventListener("mouseover", (event) => {
-        preview_status.hovered = true;
-    });
-
-    preview_canvas.addEventListener("mouseleave", (event) => {
-        preview_status.hovered = false;
-        preview_status.mouse_down = false;
     });
 
     function preview_change() {

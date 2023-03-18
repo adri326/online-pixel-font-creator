@@ -343,10 +343,11 @@ h2 {
     resize: none;
 }
 
-#preview-canvas {
+#preview-canvas-container {
     flex-grow: 1;
     flex-shrink: 1;
     height: 4em;
+    width: 100%;
 }
 
 #github-link {
