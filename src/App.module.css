@@ -1,0 +1,21 @@
+.App {
+    margin: 0;
+    display: flex;
+    width: 100dvw;
+    height: 100dvh;
+    overflow: hidden;
+    flex-direction: row;
+
+    --color-primary-dark: #5E0B15;
+    --color-primary-light: #90323D;
+
+    --color-alt-dark: #BC8034;
+    --color-alt-light: #CBA574;
+
+    --color-gray-light: #C5C9C7;
+    --color-gray-medium: #A0989F;
+    --color-gray-dark: #7A6677;
+
+    --color-white: #f0f0f0;
+    --color-black: #101010;
+}

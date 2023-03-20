@@ -1,0 +1,45 @@
+.button {
+    all: unset;
+    font-size: inherit;
+    color: inherit;
+    font-family: inherit;
+    height: 1.7em;
+    line-height: 1.3em;
+    box-sizing: border-box;
+    padding: 0.2em 0.4em;
+    margin: 0.1em 0.2em;
+    border-radius: 1px;
+
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+
+    display: block;
+    box-shadow: 0px -1px 4px -2px transparent;
+    border: 1px solid #D9CAB3;
+    background-color: transparent;
+    transition: background-color 0.2s, box-shadow 0.2s, border 0.2s, color 0.2s;
+}
+
+.button:hover {
+    cursor: pointer;
+    box-shadow: 0px -1px 4px -2px rgba(0, 0, 0, 0.5);
+    border-color: var(--color-alt-dark);
+    background-color: var(--color-alt-light);
+}
+
+.button:active {
+    background-color: var(--color-alt-dark);
+    border-color: var(--color-primary-light);
+}
+
+.button.selected {
+    border-color: var(--color-primary-dark);
+    background-color: var(--color-primary-light);
+    color: white;
+}
+
+.button.selected:hover {
+    background-color: var(--color-primary-dark);
+    border-color: var(--color-black);
+}

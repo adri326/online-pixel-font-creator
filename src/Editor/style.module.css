@@ -1,0 +1,39 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    width: calc(65% - 0.5em);
+    height: 100%;
+    align-items: flex-start;
+    font-family: monospace;
+}
+
+.canvas {
+    width: 100%;
+    height: 100%;
+    flex: 1;
+}
+
+.info {
+    color: gray;
+    padding: 0.2em;
+    margin-left: 0.3em;
+}
+
+.toolbar {
+    color: #202020;
+    width: 100%;
+    flex-wrap: wrap;
+    font-size: 10pt;
+    min-height: 1.9em;
+    font-family: monospace;
+
+    display: flex;
+    flex-direction: row;
+    padding-left: 0.3em;
+}
+
+.toolbar_text {
+    margin-left: 0.2em;
+    margin-right: 0.2em;
+    line-height: 1.9em;
+}
