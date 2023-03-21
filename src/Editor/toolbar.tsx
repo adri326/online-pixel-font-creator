@@ -12,7 +12,7 @@ export type EditorToolbarProps = {
     tool: () => EditorTool,
     setTool: (tool: EditorTool) => void,
 
-    setCurrentChar: (currentChar: number | ((previousChar: number) => number)) => void,
+    setCurrentGlyph: (currentChar: number | ((previousChar: number) => number)) => void,
 };
 
 const OPERATIONS = [
@@ -61,13 +61,13 @@ export default function EditorToolbar(props: EditorToolbarProps) {
             onEnter={(rawGlyph, element) => {
                 const parsedAbsolute = /^(?:[uU]\+)?([a-fA-F0-9]{4,8})$/.exec(rawGlyph);
                 if (parsedAbsolute) {
-                    props.setCurrentChar(Number.parseInt(parsedAbsolute[1], 16));
+                    props.setCurrentGlyph(Number.parseInt(parsedAbsolute[1], 16));
                     element.value = "";
                     return;
                 }
                 const parsedChar = parseUTF16(rawGlyph)[0];
                 if (parsedChar) {
-                    props.setCurrentChar(parsedChar);
+                    props.setCurrentGlyph(parsedChar);
                     element.value = "";
                 }
             }}
