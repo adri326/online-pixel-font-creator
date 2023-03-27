@@ -1,6 +1,6 @@
-import { Pannable } from "@shadryx/pptk";
+import { attachTouch, Pannable, Touch } from "@shadryx/pptk";
 import { PixelPerfectCanvas, PixelPerfectTouch } from "@shadryx/pptk/solid";
-import { createMemo, createSignal } from "solid-js";
+import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
 import { createStore } from "solid-js/store";
 import { FontData } from "../utils/FontData.js";
 import UnicodeData from "../utils/UnicodeData.jsx";
@@ -20,16 +20,92 @@ export default function Editor(props: EditorProps) {
     const [tool, setTool] = createSignal<EditorTool>(EditorTool.DRAW);
     const [currentGlyph, setCurrentGlyph] = createSignal(65);
 
+    const [touchElement, setTouchElement] = createSignal<HTMLElement>();
+
+    // TODO: don't mutate pannable
+    const pannable = new Pannable({});
+    const [pannableState, setPannableState] = createSignal({
+        dx: 0,
+        dy: 0,
+        scale: 1
+    });
+
     const drawData = createMemo((): DrawData => {
+        const state = pannableState();
         return {
             currentGlyph: currentGlyph(),
-            cx: 0,
-            cy: 0,
-            scale: 1
+            cx: state.dx,
+            cy: state.dy,
+            scale: state.scale
         };;
     });
 
-    const pannable = new Pannable({});
+
+    function onScroll(event: WheelEvent) {
+        let deltaY = -event.deltaY;
+        if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+            deltaY *= 12;
+        }
+        const bounding = touchElement()?.getBoundingClientRect() ?? {
+            x: 0,
+            y: 0,
+            width: 0,
+            height: 0
+        };
+
+
+        pannable.zoom(
+            Math.pow(2, deltaY * 0.001 * window.devicePixelRatio),
+            (event.clientX - bounding.x - bounding.width / 2) * window.devicePixelRatio,
+            (event.clientY - bounding.y - bounding.height / 2) * window.devicePixelRatio
+        );
+        setPannableState(pannable.getState());
+
+        // draw(canvas, props.fontData, drawData());
+    }
+
+    createEffect(() => {
+        const element = touchElement();
+        if (!element) return;
+
+        const currentTool = tool();
+        function filterTouchMap(touchMap: Map<number, Touch>): Map<number, Touch> {
+            const res: Map<number, Touch> = new Map();
+
+            for (const [index, touch] of touchMap.entries()) {
+                // TODO: also accept middle mouse button
+                if (currentTool === EditorTool.PAN || touch.type === "touch") {
+                    res.set(index, touch);
+                }
+            }
+
+            return res;
+        }
+
+        element.addEventListener("wheel", onScroll);
+        const cleanupTouch = attachTouch(element, {
+            onDown(touch, touchMap) {
+                pannable.update(filterTouchMap(touchMap));
+            },
+            onUp(touch, touchMap) {
+                pannable.update(filterTouchMap(touchMap));
+            },
+            onMove(affected, touchMap) {
+                pannable.move(filterTouchMap(touchMap));
+                setPannableState(pannable.getState());
+            }
+        });
+
+        onCleanup(() => {
+            element.removeEventListener("wheel", onScroll);
+            cleanupTouch();
+        });
+    });
+
+    createEffect(() => {
+        if (!canvas) return;
+        draw(canvas, props.fontData, drawData());
+    });
 
     let canvas: HTMLCanvasElement;
     return <div class={classes.container}>
@@ -39,6 +115,7 @@ export default function Editor(props: EditorProps) {
                 onDown={(_, touches) => pannable.update(touches)}
                 onUp={(_, touches) => pannable.update(touches)}
                 onMove={(_, touches) => pannable.move(touches)}
+                onMount={setTouchElement}
             >
                 <PixelPerfectCanvas
                     style={{width: "100%", height: "100%"}}

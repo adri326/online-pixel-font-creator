@@ -1,5 +1,6 @@
+import { getContext2D, PixelPerfectContext2D } from "@shadryx/pptk";
 import { UTF16FromCharCode } from "../utils.js";
-import { FontData } from "../utils/FontData.js";
+import { FontData, Glyph } from "../utils/FontData.js";
 
 const PREVIEW_MULT = 2;
 const CURRENT_SIZE = 128;
@@ -39,6 +40,7 @@ export function draw(
     drawData: DrawData
 ) {
     const ctx = canvas.getContext("2d")!;
+    const ctx2 = getContext2D(canvas);
     if (!ctx) return;
 
     ctx.fillStyle = COLOR_BG;
@@ -48,9 +50,8 @@ export function draw(
 
     const width = currentGlyph?.width ?? fontData.width;
     const height = currentGlyph?.height ?? fontData.height;
-    const baseline = currentGlyph?.baseline ?? fontData.baseline;
-    const leftOffset = currentGlyph?.leftOffset ?? fontData.leftOffset;
-    const pixelSize = 16;
+    const pixelSize = drawData.scale;
+
 
     function editorPos(x: number, y: number): [number, number] {
         return [
@@ -58,6 +59,7 @@ export function draw(
             y * pixelSize + drawData.cy + (canvas.height - height * pixelSize) / 2
         ];
     }
+
 
     // Adds 0.5 to x and y to produce pixel-perfect lines
     function offsetHalf([x, y]: [number, number], offset_x = true, offset_y = true): [number, number] {
@@ -74,11 +76,11 @@ export function draw(
     }
 
     function rect(x1: number, y1: number, x2: number, y2: number, margin = 0) {
-        let [rx1, ry1] = round(editorPos(x1, y1));
-        let [rx2, ry2] = round(editorPos(x2, y2));
-        return ctx.fillRect(
-            rx1 + margin, ry1 + margin,
-            rx2 - rx1 - margin * 2 + 1, ry2 - ry1 - margin * 2 + 1
+        let [rx1, ry1] = editorPos(x1, y1);
+        let [rx2, ry2] = editorPos(x2, y2);
+        return ctx2.fillRect(
+            rx1, ry1,
+            rx2 - rx1, ry2 - ry1
         );
     }
 
@@ -131,90 +133,139 @@ export function draw(
         }
     }
 
+    drawGrid(
+        canvas,
+        ctx2,
+        fontData,
+        drawData,
+        currentGlyph
+    );
+
+    // Draw next and previous characters
+    drawNeighboringGlyphs(
+        canvas,
+        ctx,
+        fontData,
+        drawData.currentGlyph
+    );
+}
+
+function drawGrid(
+    canvas: HTMLCanvasElement,
+    ctx: PixelPerfectContext2D,
+    fontData: FontData,
+    drawData: DrawData,
+    currentGlyph: Glyph | undefined,
+) {
+    function editorPos(x: number, y: number): [number, number] {
+        return [
+            x * pixelSize + drawData.cx + (canvas.width - width * pixelSize) / 2,
+            y * pixelSize + drawData.cy + (canvas.height - height * pixelSize) / 2
+        ];
+    }
+
+    const baseline = currentGlyph?.baseline ?? fontData.baseline;
+    const leftOffset = currentGlyph?.leftOffset ?? fontData.leftOffset;
+    const width = currentGlyph?.width ?? fontData.width;
+    const height = currentGlyph?.height ?? fontData.height;
+    const pixelSize = drawData.scale;
+
+    const [drawAreaLeft, drawAreaTop] = editorPos(0, 0);
+    const [drawAreaWidth, drawAreaHeight] = [width * pixelSize, height * pixelSize];
+
+
+    function horizontalLine(y: number) {
+        ctx.horizontalLine(drawAreaLeft, drawAreaTop + y * pixelSize, drawAreaWidth);
+    }
+
+    function verticalLine(x: number) {
+        ctx.verticalLine(drawAreaLeft + x * pixelSize, drawAreaTop, drawAreaHeight);
+    }
+
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = COLOR_GRID;
+
     // Draw grid
-    ctx.beginPath();
     for (let x = 0; x <= width; x++) {
-        ctx.moveTo(...offsetHalf(editorPos(x, 0)));
-        ctx.lineTo(...offsetHalf(editorPos(x, height)));
+        verticalLine(x);
     }
 
     for (let y = 0; y <= height; y++) {
-        ctx.moveTo(...offsetHalf(editorPos(0, y)));
-        ctx.lineTo(...offsetHalf(editorPos(width, y)));
+        horizontalLine(y);
     }
 
-    ctx.lineWidth = 1;
-    ctx.strokeStyle = COLOR_GRID;
-    ctx.stroke();
-
     // Draw guides
-
-    ctx.beginPath();
-    ctx.moveTo(...offsetHalf(editorPos(0, baseline - fontData.descend)));
-    ctx.lineTo(...offsetHalf(editorPos(width, baseline - fontData.descend)));
-    ctx.moveTo(...offsetHalf(editorPos(0, baseline - fontData.ascend)));
-    ctx.lineTo(...offsetHalf(editorPos(width, baseline - fontData.ascend)));
-    ctx.moveTo(...offsetHalf(editorPos(leftOffset + fontData.emSize, 0)));
-    ctx.lineTo(...offsetHalf(editorPos(leftOffset + fontData.emSize, height)));
-
     ctx.lineWidth = 3;
     ctx.strokeStyle = COLOR_GRID;
-    ctx.stroke();
+    horizontalLine(baseline - fontData.descend);
+    horizontalLine(baseline - fontData.ascend);
+    verticalLine(leftOffset + fontData.emSize);
 
     // Connect guides to the main grid if they extend past it
-    ctx.beginPath();
+    ctx.lineWidth = 1;
+    ctx.context.setLineDash([Math.round(pixelSize / 8), Math.round(pixelSize / 8)]);
     if (baseline - fontData.descend > height) {
-        ctx.moveTo(...offsetHalf(editorPos(0, height)));
-        ctx.lineTo(...offsetHalf(editorPos(0, baseline - fontData.descend)));
-
-        ctx.moveTo(...offsetHalf(editorPos(width, height)));
-        ctx.lineTo(...offsetHalf(editorPos(width, baseline - fontData.descend)));
+        ctx.verticalLine(
+            drawAreaLeft,
+            drawAreaTop + drawAreaHeight,
+            (baseline - fontData.descend) * pixelSize - drawAreaHeight
+        );
+        ctx.verticalLine(
+            drawAreaLeft + drawAreaWidth,
+            drawAreaTop + drawAreaHeight,
+            (baseline - fontData.descend) * pixelSize - drawAreaHeight
+        );
     }
 
     if (baseline - fontData.ascend < 0) {
-        ctx.moveTo(...offsetHalf(editorPos(0, 0)));
-        ctx.lineTo(...offsetHalf(editorPos(0, baseline - fontData.ascend)));
+        ctx.verticalLine(
+            drawAreaLeft,
+            drawAreaTop,
+            (baseline - fontData.descend) * pixelSize
+        );
 
-        ctx.moveTo(...offsetHalf(editorPos(width, 0)));
-        ctx.lineTo(...offsetHalf(editorPos(width, baseline - fontData.ascend)));
+        ctx.verticalLine(
+            drawAreaLeft + drawAreaWidth,
+            drawAreaTop,
+            (baseline - fontData.descend) * pixelSize
+        );
     }
 
     if (leftOffset + fontData.emSize > width) {
-        ctx.moveTo(...offsetHalf(editorPos(width, 0)));
-        ctx.lineTo(...offsetHalf(editorPos(leftOffset + fontData.emSize, 0)));
-
-        ctx.moveTo(...offsetHalf(editorPos(width, height)));
-        ctx.lineTo(...offsetHalf(editorPos(leftOffset + fontData.emSize, height)));
+        ctx.horizontalLine(
+            drawAreaLeft + drawAreaWidth,
+            drawAreaTop,
+            (leftOffset + fontData.emSize) * pixelSize - drawAreaWidth
+        );
+        ctx.horizontalLine(
+            drawAreaLeft + drawAreaWidth,
+            drawAreaTop + drawAreaHeight,
+            (leftOffset + fontData.emSize) * pixelSize - drawAreaWidth
+        );
     }
-
-    ctx.lineWidth = 1;
-    ctx.setLineDash([Math.round(pixelSize / 8), Math.round(pixelSize / 8)]);
-    ctx.stroke();
+    ctx.context.setLineDash([]);
 
     // Draw baseline
-    ctx.beginPath();
-    ctx.moveTo(...offsetHalf(editorPos(0, baseline), false, true));
-    ctx.lineTo(...offsetHalf(editorPos(width, baseline), false, true));
-
     ctx.lineWidth = 3;
     ctx.strokeStyle = COLOR_ALT_LIGHT;
     if (fontData.descend === 0) {
-        ctx.setLineDash([Math.round(pixelSize / 8), Math.round(pixelSize / 8)]);
+        ctx.context.setLineDash([Math.round(pixelSize / 8), Math.round(pixelSize / 8)]);
     } else {
-        ctx.setLineDash([]);
+        ctx.context.setLineDash([]);
     }
-    ctx.stroke();
-    ctx.setLineDash([]);
+    horizontalLine(baseline);
+    ctx.context.setLineDash([]);
 
     // Draw left offset
-    ctx.beginPath();
-    ctx.moveTo(...offsetHalf(editorPos(leftOffset, 0), false, true));
-    ctx.lineTo(...offsetHalf(editorPos(leftOffset, height), false, true));
+    verticalLine(leftOffset);
+}
 
-    ctx.stroke();
-
-    // Draw next and previous characters
-
+function drawNeighboringGlyphs(
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D,
+    fontData: FontData,
+    currentGlyphIndex: number
+) {
     ctx.fillStyle = COLOR_NEIGHBORS_BG;
     ctx.fillRect(
         0,
@@ -241,9 +292,9 @@ export function draw(
             );
         }
 
-        if (drawData.currentGlyph + offset < 0 || drawData.currentGlyph + offset > 0x1FFFF) continue;
+        if (currentGlyphIndex + offset < 0 || currentGlyphIndex + offset > 0x1FFFF) continue;
 
-        let currentGlyph = fontData.glyphs.get(drawData.currentGlyph + offset);
+        let currentGlyph = fontData.glyphs.get(currentGlyphIndex + offset);
         let drewPixel = false;
         if (currentGlyph) {
             ctx.fillStyle = COLOR_NEIGHBORS;
@@ -263,7 +314,7 @@ export function draw(
         if (!currentGlyph || !drewPixel) {
             ctx.fillStyle = COLOR_NEIGHBORS_TEXT;
             ctx.fillText(
-                UTF16FromCharCode(drawData.currentGlyph + offset),
+                UTF16FromCharCode(currentGlyphIndex + offset),
                 x + fontData.width * PREVIEW_MULT / 2,
                 y + fontData.height * PREVIEW_MULT / 2 + PREVIEW_MULT
             );

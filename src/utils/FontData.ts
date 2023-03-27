@@ -39,4 +39,8 @@ export type FontData = {
     spacing: number;
     emSize: number;
     leftOffset: number;
+
+    name: string;
+    author: string;
+    style: string;
 }
