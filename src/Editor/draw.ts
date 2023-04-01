@@ -2,10 +2,6 @@ import { getContext2D, PixelPerfectContext2D } from "@shadryx/pptk";
 import { UTF16FromCharCode } from "../utils.js";
 import { FontData, Glyph } from "../utils/FontData.js";
 
-const PREVIEW_MULT = 2;
-const CURRENT_SIZE = 128;
-const CURRENT_PADDING_LEFT = 16;
-const CURRENT_PADDING_TOP = 64;
 
 const COLOR_PRIMARY_DARK = "#5E0B15";
 const COLOR_PRIMARY_LIGHT = "#90323D";
@@ -50,13 +46,13 @@ export function draw(
 
     const width = currentGlyph?.width ?? fontData.width;
     const height = currentGlyph?.height ?? fontData.height;
-    const pixelSize = drawData.scale;
+    const pixelSize = getPixelSize(drawData.scale, canvas);
 
 
     function editorPos(x: number, y: number): [number, number] {
         return [
-            x * pixelSize + drawData.cx + (canvas.width - width * pixelSize) / 2,
-            y * pixelSize + drawData.cy + (canvas.height - height * pixelSize) / 2
+            (x - width / 2) * pixelSize + drawData.cx,
+            (y - height / 2) * pixelSize + drawData.cy,
         ];
     }
 
@@ -84,11 +80,7 @@ export function draw(
         );
     }
 
-    ctx.fillStyle = COLOR_CURRENT;
-    ctx.font = CURRENT_SIZE + "px monospace";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(UTF16FromCharCode(drawData.currentGlyph), CURRENT_SIZE / 2 + CURRENT_PADDING_LEFT, CURRENT_SIZE / 2 + CURRENT_PADDING_TOP);
+    drawCurrentGlyph(ctx, drawData.currentGlyph);
 
     // Draw background
     ctx.fillStyle = COLOR_PIXEL_WHITE;
@@ -159,8 +151,8 @@ function drawGrid(
 ) {
     function editorPos(x: number, y: number): [number, number] {
         return [
-            x * pixelSize + drawData.cx + (canvas.width - width * pixelSize) / 2,
-            y * pixelSize + drawData.cy + (canvas.height - height * pixelSize) / 2
+            (x - width / 2) * pixelSize + drawData.cx,
+            (y - height / 2) * pixelSize + drawData.cy,
         ];
     }
 
@@ -168,7 +160,7 @@ function drawGrid(
     const leftOffset = currentGlyph?.leftOffset ?? fontData.leftOffset;
     const width = currentGlyph?.width ?? fontData.width;
     const height = currentGlyph?.height ?? fontData.height;
-    const pixelSize = drawData.scale;
+    const pixelSize = getPixelSize(drawData.scale, canvas);
 
     const [drawAreaLeft, drawAreaTop] = editorPos(0, 0);
     const [drawAreaWidth, drawAreaHeight] = [width * pixelSize, height * pixelSize];
@@ -260,35 +252,37 @@ function drawGrid(
     verticalLine(leftOffset);
 }
 
+// TODO: use a separate solids component for this
 function drawNeighboringGlyphs(
     canvas: HTMLCanvasElement,
     ctx: CanvasRenderingContext2D,
     fontData: FontData,
     currentGlyphIndex: number
 ) {
+    const pixelSize = Math.ceil(Math.max(window.devicePixelRatio * 1.5, 2));
     ctx.fillStyle = COLOR_NEIGHBORS_BG;
     ctx.fillRect(
         0,
-        canvas.height - (fontData.height + 2) * PREVIEW_MULT,
+        canvas.height - (fontData.height + 2) * pixelSize,
         canvas.width,
-        (fontData.height + 2) * PREVIEW_MULT
+        (fontData.height + 2) * pixelSize
     );
 
-    let n_chars = Math.floor(canvas.width / (fontData.width + 2) / PREVIEW_MULT);
+    let n_chars = Math.floor(canvas.width / (fontData.width + 2) / pixelSize);
 
-    ctx.font = (fontData.height * PREVIEW_MULT * 0.75) + "px monospace";
+    ctx.font = (fontData.height * pixelSize * 0.75) + "px monospace";
     for (let n = 0; n < n_chars; n++) {
         let offset = n - Math.round(n_chars / 2);
-        let x = (n * (fontData.width + 2) + 1) * PREVIEW_MULT;
-        let y = canvas.height - (fontData.height + 1) * PREVIEW_MULT;
+        let x = (n * (fontData.width + 2) + 1) * pixelSize;
+        let y = canvas.height - (fontData.height + 1) * pixelSize;
 
         if (offset === 0) {
             ctx.fillStyle = COLOR_NEIGHBORS_CURRENT_BG;
             ctx.fillRect(
-                x - PREVIEW_MULT,
-                y - PREVIEW_MULT,
-                (fontData.width + 2) * PREVIEW_MULT,
-                (fontData.height + 2) * PREVIEW_MULT
+                x - pixelSize,
+                y - pixelSize,
+                (fontData.width + 2) * pixelSize,
+                (fontData.height + 2) * pixelSize
             );
         }
 
@@ -303,10 +297,10 @@ function drawNeighboringGlyphs(
                     if (!currentGlyph.get(dx, dy)) continue;
                     drewPixel = true;
                     ctx.fillRect(
-                        x + dx * PREVIEW_MULT,
-                        y + fontData.baseline - (currentGlyph.baseline ?? fontData.baseline) + dy * PREVIEW_MULT,
-                        PREVIEW_MULT,
-                        PREVIEW_MULT
+                        x + dx * pixelSize,
+                        y + fontData.baseline - (currentGlyph.baseline ?? fontData.baseline) + dy * pixelSize,
+                        pixelSize,
+                        pixelSize
                     );
                 }
             }
@@ -315,9 +309,30 @@ function drawNeighboringGlyphs(
             ctx.fillStyle = COLOR_NEIGHBORS_TEXT;
             ctx.fillText(
                 UTF16FromCharCode(currentGlyphIndex + offset),
-                x + fontData.width * PREVIEW_MULT / 2,
-                y + fontData.height * PREVIEW_MULT / 2 + PREVIEW_MULT
+                x + fontData.width * pixelSize / 2,
+                y + fontData.height * pixelSize / 2 + pixelSize
             );
         }
     }
+}
+
+function drawCurrentGlyph(ctx: CanvasRenderingContext2D, currentGlyph: number) {
+    const PADDING_LEFT = 0.15;
+    const PADDING_TOP = 0.5;
+
+    const fontSize = Math.ceil(128 * (window.devicePixelRatio ?? 1));
+
+    ctx.fillStyle = COLOR_CURRENT;
+    ctx.font = fontSize + "px monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(
+        UTF16FromCharCode(currentGlyph),
+        fontSize / 2 + fontSize * PADDING_LEFT,
+        fontSize / 2 + fontSize * PADDING_TOP
+    );
+}
+
+function getPixelSize(scale: number, canvas: HTMLCanvasElement) {
+    return scale * Math.min(canvas.width, canvas.height) * window.devicePixelRatio / 1200;
 }
