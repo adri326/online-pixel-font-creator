@@ -1,6 +1,7 @@
 import { getContext2D, PixelPerfectContext2D } from "@shadryx/pptk";
 import { UTF16FromCharCode } from "../utils.js";
 import { FontData, Glyph } from "../utils/FontData.js";
+import { AffineTransformation } from "./drawArea.js";
 
 
 const COLOR_PRIMARY_DARK = "#5E0B15";
@@ -24,10 +25,9 @@ const COLOR_NEIGHBORS = COLOR_PRIMARY_LIGHT;
 const COLOR_NEIGHBORS_TEXT = COLOR_GRAY_DARK;
 
 export type DrawData = {
-    currentGlyph: number,
-    cx: number,
-    cy: number,
-    scale: number,
+    currentGlyphIndex: number,
+    fontData: FontData,
+    drawArea: AffineTransformation,
 };
 
 export function draw(
@@ -42,50 +42,28 @@ export function draw(
     ctx.fillStyle = COLOR_BG;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    let currentGlyph = fontData.glyphs.get(drawData.currentGlyph);
+    let currentGlyph = fontData.glyphs.get(drawData.currentGlyphIndex);
 
     const width = currentGlyph?.width ?? fontData.width;
     const height = currentGlyph?.height ?? fontData.height;
-    const pixelSize = getPixelSize(drawData.scale, canvas);
-
-
-    function editorPos(x: number, y: number): [number, number] {
-        return [
-            (x - width / 2) * pixelSize + drawData.cx,
-            (y - height / 2) * pixelSize + drawData.cy,
-        ];
-    }
-
-
-    // Adds 0.5 to x and y to produce pixel-perfect lines
-    function offsetHalf([x, y]: [number, number], offset_x = true, offset_y = true): [number, number] {
-        return [Math.round(x) + (offset_x ? 0.5 : 1), Math.round(y) + (offset_y ? 0.5 : 1)];
-    }
-
-    function round([x, y]: [number, number]): [number, number] {
-        return [Math.round(x), Math.round(y)];
-    }
-
-    // Utility function for use with fillRect, that accepts a width/height pair instead of x2/y2
-    function diff([x1, y1]: [number, number], [x2, y2]: [number, number]): [number, number] {
-        return [x2 - x1, y2 - y1];
-    }
+    const pixelSize = drawData.drawArea.scale;
 
     function rect(x1: number, y1: number, x2: number, y2: number, margin = 0) {
-        let [rx1, ry1] = editorPos(x1, y1);
-        let [rx2, ry2] = editorPos(x2, y2);
+        let [rx1, ry1] = drawData.drawArea.get(x1, y1);
+        let [rx2, ry2] = drawData.drawArea.get(x2, y2);
         return ctx2.fillRect(
             rx1, ry1,
             rx2 - rx1, ry2 - ry1
         );
     }
 
-    drawCurrentGlyph(ctx, drawData.currentGlyph);
+    drawCurrentGlyph(ctx, drawData.currentGlyphIndex);
 
     // Draw background
     ctx.fillStyle = COLOR_PIXEL_WHITE;
     if (pixelSize * Math.max(width, height) <= 640) {
-        ctx.shadowColor = COLOR_GRAY_DARK + "80";
+        const opacity = 1 - Math.pow(pixelSize * Math.max(width, height) / 640, 3);
+        ctx.shadowColor = COLOR_GRAY_DARK + Math.floor(opacity * 255).toString(16).padStart(2, "0");
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = pixelSize * .25;
         ctx.shadowBlur = pixelSize * .75;
@@ -138,7 +116,7 @@ export function draw(
         canvas,
         ctx,
         fontData,
-        drawData.currentGlyph
+        drawData.currentGlyphIndex
     );
 }
 
@@ -149,29 +127,26 @@ function drawGrid(
     drawData: DrawData,
     currentGlyph: Glyph | undefined,
 ) {
-    function editorPos(x: number, y: number): [number, number] {
-        return [
-            (x - width / 2) * pixelSize + drawData.cx,
-            (y - height / 2) * pixelSize + drawData.cy,
-        ];
-    }
-
     const baseline = currentGlyph?.baseline ?? fontData.baseline;
     const leftOffset = currentGlyph?.leftOffset ?? fontData.leftOffset;
     const width = currentGlyph?.width ?? fontData.width;
     const height = currentGlyph?.height ?? fontData.height;
-    const pixelSize = getPixelSize(drawData.scale, canvas);
 
-    const [drawAreaLeft, drawAreaTop] = editorPos(0, 0);
-    const [drawAreaWidth, drawAreaHeight] = [width * pixelSize, height * pixelSize];
+    const drawArea = drawData.drawArea;
+    const pixelSize = drawArea.scale;
+
+    const [drawAreaLeft, drawAreaTop] = drawData.drawArea.get(0, 0);
+    const [drawAreaRight, drawAreaBottom] = drawData.drawArea.get(width, height);
+    const drawAreaWidth = drawAreaRight - drawAreaLeft;
+    const drawAreaHeight = drawAreaBottom - drawAreaTop;
 
 
     function horizontalLine(y: number) {
-        ctx.horizontalLine(drawAreaLeft, drawAreaTop + y * pixelSize, drawAreaWidth);
+        ctx.horizontalLine(...drawArea.get(0, y), drawAreaWidth);
     }
 
     function verticalLine(x: number) {
-        ctx.verticalLine(drawAreaLeft + x * pixelSize, drawAreaTop, drawAreaHeight);
+        ctx.verticalLine(...drawArea.get(x, 0), drawAreaHeight);
     }
 
     ctx.lineWidth = 1;
@@ -331,8 +306,4 @@ function drawCurrentGlyph(ctx: CanvasRenderingContext2D, currentGlyph: number) {
         fontSize / 2 + fontSize * PADDING_LEFT,
         fontSize / 2 + fontSize * PADDING_TOP
     );
-}
-
-function getPixelSize(scale: number, canvas: HTMLCanvasElement) {
-    return scale * Math.min(canvas.width, canvas.height) * window.devicePixelRatio / 1200;
 }

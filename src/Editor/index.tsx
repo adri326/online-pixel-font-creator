@@ -1,8 +1,10 @@
 import { Touch } from "@shadryx/pptk";
 import { PixelPerfectCanvas, PixelPerfectTouch, usePannable } from "@shadryx/pptk/solid";
 import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
-import { FontData } from "../utils/FontData.js";
+import { SetStoreFunction } from "solid-js/store";
+import { FontData, Glyph } from "../utils/FontData.js";
 import UnicodeData from "../utils/UnicodeData.jsx";
+import { getDrawArea } from "./drawArea.js";
 import { draw, DrawData } from "./draw.js";
 import EditorInfo from "./info.jsx";
 import classes from "./style.module.css";
@@ -11,7 +13,7 @@ import { EditorOperation, EditorTool } from "./types.js";
 
 export type EditorProps = {
     fontData: FontData,
-    setFontData: (data: FontData) => void,
+    setFontData: SetStoreFunction<FontData>,
 }
 
 export default function Editor(props: EditorProps) {
@@ -24,6 +26,8 @@ export default function Editor(props: EditorProps) {
 
     const [center, setCenter] = createSignal<[cx: number, cy: number]>([0, 0]);
 
+    const [pressedSet, setPressedSet] = createSignal(new Set<string>());
+
     // TODO: don't mutate pannable
     const pannable = usePannable({
         scale: 64,
@@ -31,13 +35,23 @@ export default function Editor(props: EditorProps) {
         minScale: 1,
     });
 
-    const drawData = createMemo((): DrawData => {
-        const state = pannable.getState();
+    const drawArea = createMemo(() => {
+        if (!canvas()) return undefined;
+
+        return getDrawArea(
+            props.fontData.glyphs.get(currentGlyph()) ?? props.fontData,
+            pannable.getState(),
+            canvas()!
+        );
+    });
+
+    const drawData = createMemo((): DrawData | undefined => {
+        if (!canvas() || !drawArea()) return undefined;
+
         return {
-            currentGlyph: currentGlyph(),
-            cx: state.dx,
-            cy: state.dy,
-            scale: state.scale
+            currentGlyphIndex: currentGlyph(),
+            fontData: props.fontData,
+            drawArea: drawArea()!
         };
     });
 
@@ -53,7 +67,6 @@ export default function Editor(props: EditorProps) {
             height: 0
         };
 
-
         pannable.zoom(
             Math.pow(2, deltaY * 0.001 * window.devicePixelRatio),
             (event.clientX - bounding.x) * window.devicePixelRatio,
@@ -61,17 +74,59 @@ export default function Editor(props: EditorProps) {
         );
     }
 
-    function filterTouchMap(touchMap: Map<number, Touch>): Map<number, Touch> {
+    function isPanningTouch(touch: Touch) {
+        return tool() === EditorTool.PAN || touch.type === "touch" || (touch.buttons & 4) > 0;
+    }
+
+    function panningTouches(touchMap: Map<number, Touch>): Map<number, Touch> {
         const res: Map<number, Touch> = new Map();
 
         for (const [index, touch] of touchMap.entries()) {
             // TODO: also accept middle mouse button
-            if (tool() === EditorTool.PAN || touch.type === "touch" || (touch.buttons & 4) > 0) {
+            if (isPanningTouch(touch)) {
                 res.set(index, touch);
             }
         }
 
         return res;
+    }
+
+    function applyTouches(touchMap: Map<number, Touch>) {
+        const transform = drawArea();
+        if (!transform) return;
+
+        let glyph = props.fontData.glyphs.get(currentGlyph())?.clone();
+        if (!glyph) {
+            glyph = new Glyph(props.fontData.width, props.fontData.height);
+        }
+
+        const alreadyPressed = new Set(pressedSet());
+
+        let hasDrawingTouch = false;
+
+        for (const touch of touchMap.values()) {
+            if (isPanningTouch(touch)) continue;
+            hasDrawingTouch = true;
+
+            let [x, y] = transform.inverse(touch.x, touch.y);
+            x = Math.floor(x);
+            y = Math.floor(y);
+            if (x < 0 || y < 0 || x >= glyph.width || y >= glyph.height || alreadyPressed.has(`${x}:${y}`)) {
+                continue;
+            }
+
+            alreadyPressed.add(`${x}:${y}`);
+            glyph.set(x, y, !glyph.get(x, y));
+        }
+
+        if (hasDrawingTouch) {
+            setPressedSet(alreadyPressed);
+            const newGlyphs = new Map(props.fontData.glyphs);
+            newGlyphs.set(currentGlyph(), glyph);
+            props.setFontData('glyphs', newGlyphs);
+        } else if (alreadyPressed.size > 0) {
+            setPressedSet(new Set<string>());
+        }
     }
 
     createEffect(() => {
@@ -87,8 +142,8 @@ export default function Editor(props: EditorProps) {
     });
 
     createEffect(() => {
-        if (!canvas()) return;
-        draw(canvas()!, props.fontData, drawData());
+        if (!canvas() || !drawData()) return;
+        draw(canvas()!, props.fontData, drawData()!);
     });
 
 
@@ -96,9 +151,18 @@ export default function Editor(props: EditorProps) {
         <div class={classes.canvas}>
             <PixelPerfectTouch
                 preventDefault={true}
-                onDown={(_, touches) => pannable.update(filterTouchMap(touches))}
-                onUp={(_, touches) => pannable.update(filterTouchMap(touches))}
-                onMove={(_, touches) => pannable.move(filterTouchMap(touches))}
+                onDown={(_, touches) => {
+                    pannable.update(panningTouches(touches));
+                    applyTouches(touches);
+                }}
+                onUp={(_, touches) => {
+                    pannable.update(panningTouches(touches));
+                    applyTouches(touches);
+                }}
+                onMove={(_, touches) => {
+                    pannable.move(panningTouches(touches));
+                    applyTouches(touches);
+                }}
                 onMount={setTouchElement}
             >
                 <PixelPerfectCanvas
@@ -109,7 +173,7 @@ export default function Editor(props: EditorProps) {
                     }}
                     onResize={(_, width, height) => {
                         setCenter([width / 2, height / 2]);
-                        draw(canvas()!, props.fontData, drawData());
+                        draw(canvas()!, props.fontData, drawData()!);
                     }}
                 />
             </PixelPerfectTouch>

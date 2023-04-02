@@ -27,6 +27,15 @@ export class Glyph {
         if (x < 0 || x >= this.width || y < 0 || y >= this.height) return;
         this.pixels[x + y * this.width] = value;
     }
+
+    clone(): Glyph {
+        const res = new Glyph(this.width, this.height);
+        res.pixels = this.pixels.slice();
+        res.baseline = this.baseline;
+        res.leftOffset = this.leftOffset;
+
+        return res;
+    }
 }
 
 export type FontData = {
