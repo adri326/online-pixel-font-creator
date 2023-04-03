@@ -18,4 +18,11 @@
 
     --color-white: #f0f0f0;
     --color-black: #101010;
+
+    font-family: monospace;
+}
+
+.right-panel {
+    flex-grow: 1;
+    overflow-x: hidden;
 }

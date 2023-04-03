@@ -91,6 +91,20 @@ export default function Editor(props: EditorProps) {
         return res;
     }
 
+    function applyTool(oldState: boolean) {
+        switch (operation()) {
+            case EditorOperation.ONE:
+                return true;
+            case EditorOperation.ZERO:
+                return false;
+            case EditorOperation.XOR:
+                return !oldState;
+            default:
+                // TODO: implement selection and other things
+                return oldState;
+        }
+    }
+
     function applyTouches(touchMap: Map<number, Touch>) {
         const transform = drawArea();
         if (!transform) return;
@@ -116,7 +130,7 @@ export default function Editor(props: EditorProps) {
             }
 
             alreadyPressed.add(`${x}:${y}`);
-            glyph.set(x, y, !glyph.get(x, y));
+            glyph.set(x, y, applyTool(glyph.get(x, y)));
         }
 
         if (hasDrawingTouch) {
