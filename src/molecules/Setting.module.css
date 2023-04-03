@@ -1,0 +1,7 @@
+.setting > * {
+    display: inline-block;
+}
+
+.setting > span {
+    margin-right: 0.5em;
+}

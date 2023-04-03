@@ -1,0 +1,17 @@
+.font-settings {
+    font-size: 12pt;
+}
+
+.font-settings h2 {
+    margin: 0.5em 0;
+    font-size: inherit;
+}
+
+.flex {
+    display: flex;
+    flex-direction: row;
+    gap: 1em;
+    row-gap: 0.25em;
+    flex-wrap: wrap;
+    /* justify-content: space-between; */
+}

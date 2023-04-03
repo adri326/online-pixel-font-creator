@@ -25,4 +25,5 @@
 .right-panel {
     flex-grow: 1;
     overflow-x: hidden;
+    max-width: 40dvw;
 }

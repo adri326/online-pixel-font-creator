@@ -57,6 +57,7 @@ export default function EditorToolbar(props: EditorToolbarProps) {
             }}
         </For>
         <Input
+            type="text"
             size="small"
             onEnter={(rawGlyph, element) => {
                 const parsedAbsolute = /^(?:[uU]\+)?([a-fA-F0-9]{4,8})$/.exec(rawGlyph);
