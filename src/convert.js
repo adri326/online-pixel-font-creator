@@ -212,7 +212,6 @@ export function generate_truetype(font_data) {
 
     let glyphs = [notdef_glyph];
 
-
     for (let [id, glyph] of font_data.glyphs) {
         let name = unicode_data.get(id);
         let path = new opentype.Path();
@@ -272,6 +271,15 @@ export function generate_truetype(font_data) {
             otf_glyph.leftSideBearing = Math.min(min_x - glyph.left_offset, 0) * PIXEL_SIZE;
             glyphs.push(otf_glyph);
         }
+    }
+
+    if (!glyphs.find((glyph) => glyph.unicode === 32)) {
+        glyphs.push(new opentype.Glyph({
+            name: " ",
+            unicode: 32,
+            advanceWidth: PIXEL_SIZE * (font_data.width + font_data.spacing),
+            path: new opentype.Path()
+        }));
     }
 
     let font = new opentype.Font({
