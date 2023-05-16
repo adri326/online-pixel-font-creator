@@ -1,24 +1,22 @@
-import { createSignal, untrack } from "solid-js";
+import { untrack } from "solid-js";
 import { SetStoreFunction } from "solid-js/store";
-import Button from "../atoms/Button.jsx";
+// import Button from "../atoms/Button.jsx";
 import Setting from "../molecules/Setting.jsx";
 import { FontData } from "../utils/FontData.js";
-import classes from "./FontSettings.module.css";
+import classes from "./settings.module.css";
 
 export type FontSettingsProps = {
     currentFont: FontData,
     setCurrentFont: SetStoreFunction<FontData>
 };
 
+// TODO: see if the untracks can be removed
 export default function FontSettings(props: FontSettingsProps) {
     const setCurrentFont = props.setCurrentFont;
 
     function createSetter<Name extends keyof FontData>(name: Name, defaultValue: FontData[Name]) {
         return (value: FontData[Name]) => setCurrentFont(name, value || defaultValue);
     }
-
-    const [temporaryWidth, setTemporaryWidth] = createSignal(0);
-    const [temporaryHeight, setTemporaryHeight] = createSignal(0);
 
     return (<article class={classes["font-settings"]}>
         <h2>Font name</h2>
@@ -52,7 +50,7 @@ export default function FontSettings(props: FontSettingsProps) {
                 size="tiny"
                 placeholder={() => props.currentFont.width}
                 description="The global width of glyphs"
-                onChange={setTemporaryWidth}
+                onChange={(width) => setCurrentFont("width", width)}
             />
             <Setting
                 type="number"
@@ -60,9 +58,9 @@ export default function FontSettings(props: FontSettingsProps) {
                 size="tiny"
                 placeholder={() => props.currentFont.height}
                 description="The global height of glyphs"
-                onChange={setTemporaryHeight}
+                onChange={(height) => setCurrentFont("height", height)}
             />
-            <Button
+            {/* <Button
                 theme="settings"
                 onClick={() => {
                     // TODO: retro-actively resize glyphs and add corner snapping dropdown
@@ -70,8 +68,8 @@ export default function FontSettings(props: FontSettingsProps) {
                     setCurrentFont("height", temporaryHeight() || props.currentFont.height);
                 }}
             >
-                Apply!
-            </Button>
+                Resize all glyphs
+            </Button> */}
         </div>
 
         <h2>Spacing</h2>

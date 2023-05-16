@@ -1,4 +1,10 @@
-
+export const Corner = Object.freeze({
+    TOP_LEFT: 0,
+    TOP_RIGHT: 1,
+    BOTTOM_LEFT: 2,
+    BOTTOM_RIGHT: 3,
+});
+export type Corner = 0 | 1 | 2 | 3;
 
 export class Glyph {
     public pixels: boolean[] = [];
@@ -35,6 +41,28 @@ export class Glyph {
         res.leftOffset = this.leftOffset;
 
         return res;
+    }
+
+    resize(width: number, height: number, corner: Corner): Glyph {
+        const result = new Glyph(width, height);
+        const isTopCorner = corner === Corner.TOP_LEFT || corner === Corner.TOP_RIGHT;
+
+        const left = corner === Corner.TOP_LEFT || corner === Corner.BOTTOM_LEFT ? width - this.width : 0;
+        const top = isTopCorner ? height - this.height : 0;
+
+        for (let y = 0; y < this.height; y++) {
+            if (y + top < 0 || y + top >= height) continue;
+            for (let x = 0; x < this.width; x++) {
+                if (x + left < 0 || x + left >= width) continue;
+
+                result.pixels[(x + left) + (y + top) * width] = this.pixels[x + y * this.width];
+            }
+        }
+
+        result.baseline = this.baseline;
+        result.leftOffset = this.leftOffset;
+
+        return result;
     }
 }
 

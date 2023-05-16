@@ -1,6 +1,6 @@
 import { Touch } from "@shadryx/pptk";
 import { PixelPerfectCanvas, PixelPerfectTouch, usePannable } from "@shadryx/pptk/solid";
-import { createEffect, createMemo, createSignal, onCleanup } from "solid-js";
+import { Accessor, createEffect, createMemo, createSignal, onCleanup, Setter } from "solid-js";
 import { SetStoreFunction } from "solid-js/store";
 import { FontData, Glyph } from "../utils/FontData.js";
 import UnicodeData from "../utils/UnicodeData.jsx";
@@ -14,12 +14,14 @@ import { EditorOperation, EditorTool } from "./types.js";
 export type EditorProps = {
     fontData: FontData,
     setFontData: SetStoreFunction<FontData>,
+    currentGlyphIndex: Accessor<number>,
+    setCurrentGlyphIndex: Setter<number>,
 }
 
 export default function Editor(props: EditorProps) {
     const [operation, setOperation] = createSignal<EditorOperation>(EditorOperation.XOR);
     const [tool, setTool] = createSignal<EditorTool>(EditorTool.DRAW);
-    const [currentGlyph, setCurrentGlyph] = createSignal(65);
+    const {currentGlyphIndex, setCurrentGlyphIndex} = props;
 
     const [canvas, setCanvas] = createSignal<HTMLCanvasElement>();
     const [touchElement, setTouchElement] = createSignal<HTMLElement>();
@@ -28,18 +30,18 @@ export default function Editor(props: EditorProps) {
 
     const [pressedSet, setPressedSet] = createSignal(new Set<string>());
 
-    // TODO: don't mutate pannable
     const pannable = usePannable({
         scale: 64,
         center,
         minScale: 1,
+        round: true,
     });
 
     const drawArea = createMemo(() => {
         if (!canvas()) return undefined;
 
         return getDrawArea(
-            props.fontData.glyphs.get(currentGlyph()) ?? props.fontData,
+            props.fontData.glyphs.get(currentGlyphIndex()) ?? props.fontData,
             pannable.getState(),
             canvas()!
         );
@@ -49,7 +51,7 @@ export default function Editor(props: EditorProps) {
         if (!canvas() || !drawArea()) return undefined;
 
         return {
-            currentGlyphIndex: currentGlyph(),
+            currentGlyphIndex: currentGlyphIndex(),
             fontData: props.fontData,
             drawArea: drawArea()!
         };
@@ -109,7 +111,7 @@ export default function Editor(props: EditorProps) {
         const transform = drawArea();
         if (!transform) return;
 
-        let glyph = props.fontData.glyphs.get(currentGlyph())?.clone();
+        let glyph = props.fontData.glyphs.get(currentGlyphIndex())?.clone();
         if (!glyph) {
             glyph = new Glyph(props.fontData.width, props.fontData.height);
         }
@@ -136,7 +138,7 @@ export default function Editor(props: EditorProps) {
         if (hasDrawingTouch) {
             setPressedSet(alreadyPressed);
             const newGlyphs = new Map(props.fontData.glyphs);
-            newGlyphs.set(currentGlyph(), glyph);
+            newGlyphs.set(currentGlyphIndex(), glyph);
             props.setFontData('glyphs', newGlyphs);
         } else if (alreadyPressed.size > 0) {
             setPressedSet(new Set<string>());
@@ -197,10 +199,10 @@ export default function Editor(props: EditorProps) {
             setOperation={setOperation}
             tool={tool}
             setTool={setTool}
-            setCurrentGlyph={setCurrentGlyph}
+            setCurrentGlyph={setCurrentGlyphIndex}
         />
         <UnicodeData fallback={<i class={classes.info}>Loading unicode data...</i>}>
-            <EditorInfo currentGlyph={currentGlyph} />
+            <EditorInfo currentGlyph={currentGlyphIndex} />
         </UnicodeData>
     </div>;
 }
