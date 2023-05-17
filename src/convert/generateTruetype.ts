@@ -157,7 +157,7 @@ function generatePath(
 // Von neumann neighborhood
 const VN_NEIGHBORHOOD = [[-1, 0], [0, -1], [1, 0], [0, 1]] as const;
 
-export function generateTruetype(fontData: FontData, unicodeData: Map<number, string>) {
+export function generateTruetype(fontData: FontData, unicodeData: Map<number, string>): OTFont {
     let notdef_glyph = new OTGlyph({
         name: ".notdef",
         unicode: 0,
@@ -170,70 +170,65 @@ export function generateTruetype(fontData: FontData, unicodeData: Map<number, st
     for (let [id, glyph] of fontData.glyphs) {
         let name = unicodeData.get(id);
         let path = new Path();
-        let explored = new Array(glyph.width * glyph.height).fill(false);
         let is_empty = true;
-        let min_x = glyph.width;
-        let max_x = 0;
-        let min_y = glyph.height;
-        let max_y = 0;
-
-        // Breadth-first search of an island of pixels
-        function scanRegion(sx: number, sy: number) {
-            const open: [x: number, y: number][] = [[sx, sy]];
-            const res: boolean[] = new Array(glyph.width * glyph.height).fill(false);
-            let current;
-
-            while (current = open.pop()) {
-                const [x, y] = current;
-                res[x + y * glyph.width] = true;
-                for (const [dx, dy] of VN_NEIGHBORHOOD) {
-                    if (x + dx < 0 || x + dx >= glyph.width || y + dy < 0 || y + dy >= glyph.height) continue;
-                    let index = x + dx + (y + dy) * glyph.width;
-                    if (glyph.get(x + dx, y + dy) && !explored[index]) {
-                        explored[index] = true;
-                        open.push([x + dx, y + dy]);
-                    }
-                }
-            }
-
-            return res;
-        }
+        let xMin = glyph.width;
+        let xMax = 0;
+        let yMin = glyph.height;
+        let yMax = 0;
+        const leftOffset = glyph.leftOffset ?? fontData.leftOffset;
 
         for (let y = 0; y < glyph.height; y++) {
             for (let x = 0; x < glyph.width; x++) {
-                min_x = Math.min(min_x, x);
-                max_x = Math.max(max_x, x);
-                min_y = Math.min(min_y, y);
-                max_y = Math.max(max_y, y);
-                if (!explored[x + y * glyph.width] && glyph.get(x, y)) {
+                if (glyph.get(x, y)) {
                     is_empty = false;
-                    explored[x + y * glyph.width] = true;
-                    // TODO: see if scanRegion can be safely removed
-                    generatePath(
-                        scanRegion(x, y),
-                        {
-                            width: glyph.width,
-                            height: glyph.height,
-                            baseline: glyph.baseline ?? fontData.baseline,
-                            leftOffset: glyph.leftOffset ?? fontData.leftOffset
-                        },
-                        path
-                    );
-                } else {
-                    explored[x + y * glyph.width] = true;
+                    xMin = Math.min(xMin, x);
+                    xMax = Math.max(xMax, x);
+                    yMin = Math.min(yMin, y);
+                    yMax = Math.max(yMax, y);
                 }
             }
         }
 
-        if (!is_empty) {
+        generatePath(
+            glyph.getPixels(),
+            {
+                width: glyph.width,
+                height: glyph.height,
+                baseline: glyph.baseline ?? fontData.baseline,
+                leftOffset
+            },
+            path
+        );
+
+        if (!is_empty || id === 32) {
             glyphs.push(new OTGlyph({
                 name,
                 unicode: id,
-                advanceWidth: PIXEL_SIZE * (glyph.width + fontData.spacing - (glyph.leftOffset ?? fontData.leftOffset)),
+                advanceWidth: PIXEL_SIZE * (glyph.width + fontData.spacing - leftOffset),
                 path,
-                leftSideBearing: Math.min(min_x - (glyph.leftOffset ?? fontData.leftOffset), 0) * PIXEL_SIZE,
+                leftSideBearing: Math.min(xMin - leftOffset, 0) * PIXEL_SIZE,
+                // Looks like opentype.js discards this information anyway, so it might not be that useful to compute it
+                xMin: (xMin - leftOffset) * PIXEL_SIZE,
+                xMax: (xMax - leftOffset) * PIXEL_SIZE,
+                // Note that min(-x) = -max(x)
+                yMin: -(yMax - (glyph.baseline ?? fontData.baseline)) * PIXEL_SIZE,
+                yMax: -(yMin - (glyph.baseline ?? fontData.baseline)) * PIXEL_SIZE,
             }));
         }
+    }
+
+    if (!glyphs.find((glyph) => glyph.index === 32)) {
+        glyphs.push(new OTGlyph({
+            name: unicodeData.get(32),
+            unicode: 32,
+            advanceWidth: PIXEL_SIZE * (fontData.width + fontData.spacing - fontData.leftOffset),
+            path: new Path(),
+            leftSideBearing: 0,
+            xMin: 0,
+            xMax: 0,
+            yMin: 0,
+            yMax: 0,
+        }));
     }
 
     return new OTFont({

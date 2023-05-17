@@ -21,7 +21,7 @@ export default function GlyphSettings(props: GlyphSettingsProps) {
 
     const [pasteGlyph, setPasteGlyph] = createSignal("");
 
-    return (<article class={classes["glyph-settings"]}>
+    return (<article class={classes.settings}>
         <h2>Paste another glyph</h2>
         <div class={classes.flex}>
             <Setting

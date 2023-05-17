@@ -43,6 +43,10 @@ export class Glyph {
         this.pixels[x + y * this.width] = value;
     }
 
+    getPixels(): boolean[] {
+        return this.pixels;
+    }
+
     setBaseline(baseline: number): Glyph {
         return new Glyph(this.width, this.height, baseline, this.leftOffset, this.pixels);
     }

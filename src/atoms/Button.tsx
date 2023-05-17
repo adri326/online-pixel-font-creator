@@ -5,18 +5,22 @@ export type ButtonProps = {
     children: JSX.Element,
     selected?: boolean,
     onClick?: () => void,
-    theme?: "settings" | "default"
-};
+    theme?: "settings" | "default",
+    disabled?: (() => boolean) | boolean,
+} & Omit<JSX.ButtonHTMLAttributes<HTMLButtonElement>, 'onClick' | 'disabled'>;
 
-export default function Button(props: ButtonProps) {
+export default function Button({children, selected, onClick, theme, class: className, disabled, ...props}: ButtonProps) {
     return (<button
         class={[
             classes.button,
-            props.selected ? classes.selected : undefined,
-            props.theme === "settings" ? classes.settings : undefined,
+            selected ? classes.selected : undefined,
+            theme === "settings" ? classes.settings : undefined,
+            className
         ].filter((x): x is string => !!x).join(" ")}
-        onClick={props.onClick}
+        onClick={onClick}
+        disabled={typeof disabled === "function" ? disabled() : disabled}
+        {...props}
     >
-            {props.children}
+        {children}
     </button>);
 }

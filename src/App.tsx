@@ -1,14 +1,17 @@
 import { createMemo, createResource, createSignal } from "solid-js";
 import { createStore, SetStoreFunction } from "solid-js/store";
 import classes from "./App.module.css";
+import { loadFont } from "./convert/save.js";
 import Editor from "./Editor/index.jsx";
+import Listeners from "./Listeners.jsx";
 import Tabbed from "./molecules/Tabbed.jsx";
 import FontSettings from "./settings/FontSettings.jsx";
 import GlyphSettings from "./settings/GlyphSettings.jsx";
+import IOSettings from "./settings/IOSettings.jsx";
 import { FontData, Glyph } from "./utils/FontData.js";
 
 export default function App() {
-    const [currentFont, setCurrentFont] = createStore<FontData>({
+    const [currentFont, setCurrentFont] = createStore<FontData>(loadFont() || {
         width: 8,
         height: 10,
         baseline: 8,
@@ -39,6 +42,12 @@ export default function App() {
     };
 
     return (<div class={classes.App}>
+        <Listeners
+            fontData={currentFont}
+            setFontData={setCurrentFont}
+            currentGlyphIndex={currentGlyphIndex}
+            setCurrentGlyphIndex={setCurrentGlyphIndex}
+        />
         <Editor
             fontData={currentFont}
             setFontData={setCurrentFont}
@@ -53,6 +62,10 @@ export default function App() {
                         currentGlyph={currentGlyph}
                         setCurrentGlyph={setCurrentGlyph}
                         currentFont={currentFont}
+                    />,
+                    "Import/Export": () => <IOSettings
+                        currentFont={currentFont}
+                        setCurrentFont={setCurrentFont}
                     />,
                 }}
             </Tabbed>

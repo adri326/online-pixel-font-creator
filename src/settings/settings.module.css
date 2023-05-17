@@ -1,8 +1,8 @@
-.font-settings, .glyph-settings {
+.settings {
     font-size: 12pt;
 }
 
-.font-settings h2, .glyph-settings h2 {
+.settings h2 {
     margin: 0.5em 0;
     font-size: inherit;
 }

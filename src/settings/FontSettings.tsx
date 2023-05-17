@@ -3,6 +3,7 @@ import { SetStoreFunction } from "solid-js/store";
 // import Button from "../atoms/Button.jsx";
 import Setting from "../molecules/Setting.jsx";
 import { FontData } from "../utils/FontData.js";
+import FontName from "./FontName.jsx";
 import classes from "./settings.module.css";
 
 export type FontSettingsProps = {
@@ -18,29 +19,8 @@ export default function FontSettings(props: FontSettingsProps) {
         return (value: FontData[Name]) => setCurrentFont(name, value || defaultValue);
     }
 
-    return (<article class={classes["font-settings"]}>
-        <h2>Font name</h2>
-        <Setting
-            type="text"
-            prefix="Name:"
-            placeholder="My Amazing Font"
-            description="The font name"
-            onChange={createSetter("name", "My Amazing Font")}
-        />
-        <Setting
-            type="text"
-            prefix="Author:"
-            placeholder="Anonymous"
-            description="The font author's name or copyright"
-            onChange={createSetter("author", "Anonymous")}
-        />
-        <Setting
-            type="text"
-            prefix="Style:"
-            placeholder="Medium"
-            description="The font style (eg. 'Medium' or 'Light')"
-            onChange={createSetter("style", "Medium")}
-        />
+    return (<article class={classes.settings}>
+        <FontName {...props} />
 
         <h2>Dimensions</h2>
         <div class={classes.flex}>
