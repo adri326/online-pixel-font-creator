@@ -9,18 +9,20 @@ export type DropdownProps<Value> = {
 
 // TODO: style this properly
 export default function Dropdown<Value>(props: DropdownProps<Value>) {
-    return <select
-        class={[classes.input, props.theme === "setting" && classes.setting].filter(Boolean).join(" ")}
-        onChange={(event) => {
-            const value = props.values[+event.currentTarget.value][1];
+    return (<button class={[classes.input, props.theme === "setting" && classes.setting].filter(Boolean).join(" ")}>
+        <select
+            onChange={(event) => {
+                const value = props.values[+event.currentTarget.value][1];
 
-            props.onChange?.(value);
-        }}
-    >
-        <For each={props.values}>
-            {([label], index) => {
-                return <option value={index().toString()} selected={index() === 0}>{label}</option>
+                props.onChange?.(value);
             }}
-        </For>
-    </select>
+        >
+            <For each={props.values}>
+                {([label], index) => {
+                    return <option value={index().toString()} selected={index() === 0}>{label}</option>
+                }}
+            </For>
+        </select>
+        <i>&#x25bc;</i>
+    </button>);
 }
