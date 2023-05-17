@@ -1,0 +1,61 @@
+.dropdown {
+    display: inline-block;
+    margin: 0.1em 0.2em;
+    position: relative;
+
+    border-radius: 1px;
+    box-shadow: 0px -1px 4px -2px transparent;
+    border: 1px solid #D9CAB3;
+    background-color: transparent;
+    transition: background-color 0.2s, box-shadow 0.2s, border 0.2s, color 0.2s;
+
+    --padding-horizontal: 0.4em;
+    --padding-vertical: 0.1em;
+
+    cursor: pointer;
+}
+
+.dropdown > select {
+    appearance: none;
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    font-size: inherit;
+    cursor: pointer;
+    padding: var(--padding-vertical) var(--padding-horizontal);
+    padding-right: calc(2 * var(--padding-horizontal) + 1ch);
+    line-height: 1.3em;
+    height: calc(1.3em + 2 * var(--padding-vertical));
+    width: fit-content;
+
+    /* pointer-events: none; */
+}
+
+.dropdown > select:focus {
+    outline: none;
+}
+
+.dropdown > label {
+    font-style: normal;
+    user-select: none;
+    pointer-events: none;
+    position: absolute;
+    right: calc(var(--padding-horizontal) + 0.2em);
+}
+
+.setting, .setting:hover, .setting:focus {
+    background-color: white;
+    border: 1px solid var(--color-primary-dark);
+    border-radius: 2px;
+    --padding-horizontal: 0.5em;
+    box-shadow: 0px 6px 6px -4px transparent;
+}
+
+.setting:hover {
+    box-shadow: 0px 6px 6px -4px rgba(0, 0, 0, 0.25);
+}
+
+.dropdown:focus-within {
+    outline: 2px solid var(--color-contrast);
+    border: 1px solid var(--color-alt-dark);
+}

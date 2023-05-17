@@ -35,3 +35,17 @@ export function parseUTF16(str: string) {
     }
     return res;
 }
+
+export function parseGlyphOrIndex(glyphOrIndex: string): number | undefined {
+    const parsedAbsolute = /^(?:[uU]\+)?([a-fA-F0-9]{4,8})$/.exec(glyphOrIndex);
+    if (parsedAbsolute) {
+        return Number.parseInt(parsedAbsolute[1], 16);
+    }
+
+    const parsedChar = parseUTF16(glyphOrIndex)[0];
+    if (parsedChar) {
+        return parsedChar;
+    }
+
+    return undefined;
+}

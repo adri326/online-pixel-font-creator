@@ -39,16 +39,6 @@
     width: 6em;
 }
 
-.input > select {
-    appearance: none;
-    background: transparent;
-    border: none;
-    font-family: inherit;
-    font-size: inherit;
-    cursor: pointer;
-    padding-right: 1em;
-}
-
 .input.setting, .input.setting:hover, .input.setting:focus {
     background-color: white;
     border: 1px solid var(--color-primary-dark);

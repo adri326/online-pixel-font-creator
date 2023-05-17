@@ -6,16 +6,21 @@ export const Corner = Object.freeze({
 });
 export type Corner = 0 | 1 | 2 | 3;
 
+// TODO: move to a different file
 export class Glyph {
-    public pixels: boolean[] = [];
-    public baseline?: number;
-    public leftOffset?: number;
+    private pixels: boolean[];
 
     constructor(
-        public width: number,
-        public height: number,
+        public readonly width: number,
+        public readonly height: number,
+        public readonly baseline?: number,
+        public readonly leftOffset?: number,
+        pixels = new Array(width * height).fill(false),
     ) {
-        this.pixels = new Array(width * height).fill(false);
+        if (pixels.length != width * height) {
+            throw new Error("Assertion error: expected pixels.length to be equal to width * height");
+        }
+        this.pixels = pixels;
     }
 
     dimensions(): [width: number, height: number] {
@@ -28,23 +33,33 @@ export class Glyph {
         return this.pixels[x + y * this.width];
     }
 
+    /** Sets the pixel at `x, y` to `value`.
+     *
+     * __mutates `this`!__
+     **/
     set(x: number, y: number, value: boolean) {
         if (!Number.isInteger(x) || !Number.isInteger(y)) return;
         if (x < 0 || x >= this.width || y < 0 || y >= this.height) return;
         this.pixels[x + y * this.width] = value;
     }
 
-    clone(): Glyph {
-        const res = new Glyph(this.width, this.height);
-        res.pixels = this.pixels.slice();
-        res.baseline = this.baseline;
-        res.leftOffset = this.leftOffset;
+    setBaseline(baseline: number): Glyph {
+        return new Glyph(this.width, this.height, baseline, this.leftOffset, this.pixels);
+    }
 
-        return res;
+    setLeftOffset(leftOffset: number): Glyph {
+        return new Glyph(this.width, this.height, this.baseline, leftOffset, this.pixels);
+    }
+
+    /**
+     * Returns a deep copy of this glyph, allowing for mutation of the glyph.
+     **/
+    clone(): Glyph {
+        return new Glyph(this.width, this.height, this.baseline, this.leftOffset, this.pixels.slice());
     }
 
     resize(width: number, height: number, corner: Corner): Glyph {
-        const result = new Glyph(width, height);
+        const result = new Glyph(width, height, this.baseline, this.leftOffset);
         const isTopCorner = corner === Corner.TOP_LEFT || corner === Corner.TOP_RIGHT;
 
         const left = corner === Corner.TOP_LEFT || corner === Corner.BOTTOM_LEFT ? width - this.width : 0;
@@ -53,14 +68,9 @@ export class Glyph {
         for (let y = 0; y < this.height; y++) {
             if (y + top < 0 || y + top >= height) continue;
             for (let x = 0; x < this.width; x++) {
-                if (x + left < 0 || x + left >= width) continue;
-
-                result.pixels[(x + left) + (y + top) * width] = this.pixels[x + y * this.width];
+                result.set(x + left, y + top, this.pixels[x + y * this.width]);
             }
         }
-
-        result.baseline = this.baseline;
-        result.leftOffset = this.leftOffset;
 
         return result;
     }

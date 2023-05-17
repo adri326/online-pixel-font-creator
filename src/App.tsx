@@ -49,7 +49,11 @@ export default function App() {
             <Tabbed>
                 {{
                     Font: () => <FontSettings currentFont={currentFont} setCurrentFont={setCurrentFont} />,
-                    Glyph: () => <GlyphSettings currentGlyph={currentGlyph} setCurrentGlyph={setCurrentGlyph} />,
+                    Glyph: () => <GlyphSettings
+                        currentGlyph={currentGlyph}
+                        setCurrentGlyph={setCurrentGlyph}
+                        currentFont={currentFont}
+                    />,
                 }}
             </Tabbed>
         </div>

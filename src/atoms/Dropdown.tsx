@@ -1,5 +1,6 @@
 import { For } from "solid-js";
-import classes from "./Input.module.css";
+import dropdownClasses from "./Dropdown.module.css";
+import inputClasses from "./Input.module.css";
 
 export type DropdownProps<Value> = {
     values: [label: string, value: Value][],
@@ -9,8 +10,18 @@ export type DropdownProps<Value> = {
 
 // TODO: style this properly
 export default function Dropdown<Value>(props: DropdownProps<Value>) {
-    return (<button class={[classes.input, props.theme === "setting" && classes.setting].filter(Boolean).join(" ")}>
+    const selectId = "select-" + randomString(4);
+
+    return (<span
+            class={[
+                // inputClasses.input,
+                dropdownClasses.dropdown,
+                props.theme === "setting" ? dropdownClasses.setting : undefined,
+            ].filter(Boolean).join(" ")}
+            tabindex="-1"
+        >
         <select
+            id={selectId}
             onChange={(event) => {
                 const value = props.values[+event.currentTarget.value][1];
 
@@ -23,6 +34,17 @@ export default function Dropdown<Value>(props: DropdownProps<Value>) {
                 }}
             </For>
         </select>
-        <i>&#x25bc;</i>
-    </button>);
+        <label aria-hidden for={selectId}>&#x25bc;</label>
+    </span>);
+}
+
+function randomString(length: number) {
+    const alphabet = "abcdefghijklmnopqrstuvwxyz".split("");
+
+    let result = [];
+    for (let n = 0; n < length; n++) {
+        result.push(alphabet[Math.floor(Math.random() * alphabet.length)]);
+    }
+
+    return result.join("");
 }

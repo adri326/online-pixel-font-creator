@@ -48,7 +48,7 @@ export default function FontSettings(props: FontSettingsProps) {
                 type="number"
                 prefix="Width:"
                 size="tiny"
-                placeholder={() => props.currentFont.width}
+                value={props.currentFont.width}
                 description="The global width of glyphs"
                 onChange={(width) => setCurrentFont("width", width)}
             />
@@ -56,7 +56,7 @@ export default function FontSettings(props: FontSettingsProps) {
                 type="number"
                 prefix="Height:"
                 size="tiny"
-                placeholder={() => props.currentFont.height}
+                value={props.currentFont.height}
                 description="The global height of glyphs"
                 onChange={(height) => setCurrentFont("height", height)}
             />

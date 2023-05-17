@@ -1,7 +1,7 @@
 import { For } from "solid-js";
 import Button from "../atoms/Button.jsx";
 import Input from "../atoms/Input.jsx";
-import { charCodeFromUTF16, parseUTF16 } from "../utils.js";
+import { charCodeFromUTF16, parseGlyphOrIndex, parseUTF16 } from "../utils.js";
 import classes from "./style.module.css";
 import { EditorOperation, EditorTool } from "./types.js";
 
@@ -60,16 +60,11 @@ export default function EditorToolbar(props: EditorToolbarProps) {
             type="text"
             size="small"
             onEnter={(rawGlyph, element) => {
-                const parsedAbsolute = /^(?:[uU]\+)?([a-fA-F0-9]{4,8})$/.exec(rawGlyph);
-                if (parsedAbsolute) {
-                    props.setCurrentGlyph(Number.parseInt(parsedAbsolute[1], 16));
+                const index = parseGlyphOrIndex(rawGlyph);
+                if (index !== undefined) {
+                    props.setCurrentGlyph(index);
                     element.value = "";
                     return;
-                }
-                const parsedChar = parseUTF16(rawGlyph)[0];
-                if (parsedChar) {
-                    props.setCurrentGlyph(parsedChar);
-                    element.value = "";
                 }
             }}
         >
