@@ -433,10 +433,10 @@
     "@jridgewell/resolve-uri" "3.1.0"
     "@jridgewell/sourcemap-codec" "1.4.14"
 
-"@shadryx/pptk@~0.1.7":
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/@shadryx/pptk/-/pptk-0.1.8.tgz#f8c01eaaec64711c3201ab3ce59d1f1cea19718b"
-  integrity sha512-wxS77RD0Dr8FZD0EIpYKIl/Ax0XLEZNG01h3XphO9SM4U+rs9whsH2Akiays9mFbqKf5M80gYg++193Nzne/FQ==
+"@shadryx/pptk@~0.1.9":
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/@shadryx/pptk/-/pptk-0.1.9.tgz#2ccb106f85990b0726b4072a15a98f79708096eb"
+  integrity sha512-u/F9zBf401DE0qvMz0qCF7Lcz0I+Hh9XkjvHSYQRUi3hHWvp7o+o/76eoCFW15IxfdGcVJkRalnweGI0nQp2ig==
 
 "@types/babel__core@^7.1.20":
   version "7.20.0"
