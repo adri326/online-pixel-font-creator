@@ -16,6 +16,15 @@ export default function Listeners(props: ListenersProps) {
         if (event.code === "KeyS" && event.ctrlKey && !event.shiftKey) {
             event.preventDefault();
             saveFont(props.fontData);
+        } else if ((event.code === "ArrowLeft" || event.code === "ArrowRight") && !event.ctrlKey) {
+            if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+                return;
+            }
+
+            const offset = event.code === "ArrowLeft" ? -1 : 1;
+            let newGlyphIndex = props.currentGlyphIndex() + offset;
+            if (newGlyphIndex < 0) newGlyphIndex = 0;
+            props.setCurrentGlyphIndex(newGlyphIndex);
         }
     }
 

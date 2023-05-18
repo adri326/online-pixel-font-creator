@@ -1,4 +1,5 @@
 import { getContext2D, PixelPerfectContext2D } from "@shadryx/pptk";
+import { appSettings } from "../settings/AppSettings.jsx";
 import { UTF16FromCharCode } from "../utils.js";
 import { FontData, Glyph } from "../utils/FontData.js";
 import { AffineTransformation } from "./drawArea.js";
@@ -13,9 +14,12 @@ const COLOR_GRAY_MEDIUM = "#A0989F";
 const COLOR_GRAY_DARK = "#7A6677";
 const COLOR_BLACK = "#101010";
 const COLOR_WHITE = "#f0f0f0";
+const COLOR_LIGHT_BLUE = "#e8e8f4";
 
 const COLOR_BG = COLOR_GRAY_MEDIUM;
+const COLOR_BG_ALT = "#8b7f84";
 const COLOR_PIXEL_WHITE = COLOR_WHITE;
+const COLOR_PIXEL_DOUBLE_TAP = COLOR_LIGHT_BLUE;
 const COLOR_PIXEL_BLACK = "#212326";
 const COLOR_GRID = "#403060";
 const COLOR_CURRENT = COLOR_PRIMARY_LIGHT;
@@ -28,6 +32,7 @@ export type DrawData = {
     currentGlyphIndex: number,
     fontData: FontData,
     drawArea: AffineTransformation,
+    doubleTapMode: boolean,
 };
 
 export function draw(
@@ -57,10 +62,14 @@ export function draw(
         );
     }
 
+    if (appSettings.arrowArea > 0) {
+        drawArrows(ctx, canvas);
+    }
+
     drawCurrentGlyph(ctx, drawData.currentGlyphIndex);
 
     // Draw background
-    ctx.fillStyle = COLOR_PIXEL_WHITE;
+    ctx.fillStyle = drawData.doubleTapMode ? COLOR_PIXEL_DOUBLE_TAP : COLOR_PIXEL_WHITE;
     if (pixelSize * Math.max(width, height) <= 640) {
         const opacity = 1 - Math.pow(pixelSize * Math.max(width, height) / 640, 3);
         ctx.shadowColor = COLOR_GRAY_DARK + Math.floor(opacity * 255).toString(16).padStart(2, "0");
@@ -306,4 +315,40 @@ function drawCurrentGlyph(ctx: CanvasRenderingContext2D, currentGlyph: number) {
         fontSize / 2 + fontSize * PADDING_LEFT,
         fontSize / 2 + fontSize * PADDING_TOP
     );
+}
+
+function drawArrows(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement) {
+    ctx.fillStyle = COLOR_BG_ALT;
+    ctx.fillRect(0, 0, canvas.width * appSettings.arrowArea, canvas.height);
+    ctx.fillRect(canvas.width * (1 - appSettings.arrowArea), 0, canvas.width * appSettings.arrowArea, canvas.height);
+
+    ctx.fillStyle = COLOR_GRAY_LIGHT;
+    ctx.beginPath();
+    ctx.moveTo(
+        canvas.width * appSettings.arrowArea * 0.4,
+        canvas.height * 0.5
+    );
+    ctx.lineTo(
+        canvas.width * appSettings.arrowArea * 0.6,
+        canvas.height * 0.5 - canvas.width * appSettings.arrowArea * 0.2
+    );
+    ctx.lineTo(
+        canvas.width * appSettings.arrowArea * 0.6,
+        canvas.height * 0.5 + canvas.width * appSettings.arrowArea * 0.2
+    );
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(
+        canvas.width * (1 - appSettings.arrowArea * 0.4),
+        canvas.height * 0.5
+    );
+    ctx.lineTo(
+        canvas.width * (1 - appSettings.arrowArea * 0.6),
+        canvas.height * 0.5 - canvas.width * appSettings.arrowArea * 0.2
+    );
+    ctx.lineTo(
+        canvas.width * (1 - appSettings.arrowArea * 0.6),
+        canvas.height * 0.5 + canvas.width * appSettings.arrowArea * 0.2
+    );
+    ctx.fill();
 }

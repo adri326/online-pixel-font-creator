@@ -10,12 +10,19 @@ import EditorInfo from "./info.jsx";
 import classes from "./style.module.css";
 import EditorToolbar from "./toolbar.jsx";
 import { EditorOperation, EditorTool } from "./types.js";
+import { appSettings } from "../settings/AppSettings.jsx";
 
 export type EditorProps = {
     fontData: FontData,
     setFontData: SetStoreFunction<FontData>,
     currentGlyphIndex: Accessor<number>,
     setCurrentGlyphIndex: Setter<number>,
+}
+
+type Tap = {
+    x: number,
+    y: number,
+    time: number,
 }
 
 export default function Editor(props: EditorProps) {
@@ -37,6 +44,12 @@ export default function Editor(props: EditorProps) {
         round: true,
     });
 
+    const [touchDates, setTouchDates] = createSignal<Map<number, number>>(new Map());
+    const [taps, setTaps] = createSignal<Tap[]>([]);
+    const [doubleTaps, setDoubleTaps] = createSignal<Set<number>>(new Set<number>());
+    const [doubleTapTimeout, setDoubleTapTimeout] = createSignal<NodeJS.Timeout | undefined>(undefined);
+    const [doubleTapMode, setDoubleTapMode] = createSignal<boolean>(false);
+
     const drawArea = createMemo(() => {
         if (!canvas()) return undefined;
 
@@ -53,7 +66,8 @@ export default function Editor(props: EditorProps) {
         return {
             currentGlyphIndex: currentGlyphIndex(),
             fontData: props.fontData,
-            drawArea: drawArea()!
+            drawArea: drawArea()!,
+            doubleTapMode: doubleTapMode(),
         };
     });
 
@@ -77,6 +91,9 @@ export default function Editor(props: EditorProps) {
     }
 
     function isPanningTouch(touch: Touch) {
+        if (doubleTaps().has(touch.id)) {
+            return false;
+        }
         return tool() === EditorTool.PAN || touch.type === "touch" || (touch.buttons & 4) > 0;
     }
 
@@ -139,7 +156,7 @@ export default function Editor(props: EditorProps) {
             setPressedSet(alreadyPressed);
             const newGlyphs = new Map(props.fontData.glyphs);
             newGlyphs.set(currentGlyphIndex(), glyph);
-            props.setFontData('glyphs', newGlyphs);
+            props.setFontData("glyphs", newGlyphs);
         } else if (alreadyPressed.size > 0) {
             setPressedSet(new Set<string>());
         }
@@ -162,16 +179,127 @@ export default function Editor(props: EditorProps) {
         draw(canvas()!, props.fontData, drawData()!);
     });
 
+    function isTap(touch: Touch) {
+        if (Date.now() - (touchDates().get(touch.id) ?? 0) >= appSettings.doubleTapDelay) {
+            return false;
+        }
+        const distance = (touch.x - touch.click_x) ** 2 + (touch.y - touch.click_y) ** 2;
+
+        return distance < appSettings.doubleTapDistance ** 2;
+    }
+
+    function isDoubleTap(touch: Touch) {
+        if (!isInDrawArea(touch.x, touch.y)) return false;
+
+        const maxDistance = appSettings.doubleTapDistance ** 2;
+        for (const tap of taps()) {
+            if (Date.now() - tap.time >= appSettings.doubleTapDelay) {
+                continue;
+            }
+
+            const distance = (touch.x - tap.x) ** 2 + (touch.y - tap.y) ** 2;
+
+            if (distance < maxDistance) return true;
+        }
+
+        return false;
+    }
+
+    setInterval(() => {
+        let newTaps = taps();
+        let modified = false;
+        const now = Date.now();
+
+        newTaps = newTaps.filter(({time}) => {
+            const keep = now - time < appSettings.doubleTapDelay;
+            if (!keep) modified = true;
+            return keep;
+        });
+
+        if (modified) setTaps(newTaps);
+    }, 1000);
+
+
+    function isInDrawArea(x: number, y: number) {
+        const transform = drawArea();
+        if (!transform) return;
+
+        const inverse = transform.inverse(x, y);
+        const width = props.fontData.glyphs.get(currentGlyphIndex())?.width ?? props.fontData.width;
+        const height = props.fontData.glyphs.get(currentGlyphIndex())?.height ?? props.fontData.height;
+
+        inverse[0] = Math.floor(inverse[0]);
+        inverse[1] = Math.floor(inverse[1]);
+
+        return inverse[0] >= 0 && inverse[0] < width && inverse[1] >= 0 && inverse[1] < height;
+    }
+
+    function handleTap(touch: Touch) {
+        if (isInDrawArea(touch.x, touch.y)) return;
+
+        const horizontalRatio = touch.x / canvas()!.width;
+        if (horizontalRatio < appSettings.arrowArea) {
+            setCurrentGlyphIndex((prev) => Math.max(prev - 1, 0));
+        } else if (horizontalRatio > 1 - appSettings.arrowArea) {
+            setCurrentGlyphIndex((prev) => prev + 1);
+        }
+    }
 
     return <div class={classes.container}>
         <div class={classes.canvas}>
             <PixelPerfectTouch
                 preventDefault={true}
-                onDown={(_, touches) => {
+                onDown={(touch, touches) => {
+                    canvas()!.focus();
+
+                    const newTouchDates = new Map(touchDates());
+                    newTouchDates.set(touch.id, Date.now());
+                    setTouchDates(newTouchDates);
+
+                    if (doubleTapMode() && isInDrawArea(touch.x, touch.y) || isDoubleTap(touch)) {
+                        const newDoubleTaps = new Set(doubleTaps());
+                        newDoubleTaps.add(touch.id);
+                        setDoubleTaps(newDoubleTaps);
+                        setDoubleTapMode(true);
+                        setDoubleTapTimeout((prev) => {
+                            if (prev !== undefined) clearTimeout(prev);
+                            return undefined;
+                        });
+                    }
+
                     pannable.update(panningTouches(touches));
                     applyTouches(touches);
                 }}
-                onUp={(_, touches) => {
+                onUp={(touch, touches) => {
+                    if (touch) {
+                        if (isTap(touch)) {
+                            const newTaps = [...taps()];
+                            newTaps.push({
+                                x: touch.x,
+                                y: touch.y,
+                                time: Date.now()
+                            });
+                            setTaps(newTaps);
+
+                            handleTap(touch);
+                        }
+
+                        if (doubleTaps().has(touch.id)) {
+                            const newDoubleTaps = new Set(doubleTaps());
+                            newDoubleTaps.delete(touch.id);
+                            setDoubleTaps(newDoubleTaps);
+
+                            if (newDoubleTaps.size == 0) {
+                                setDoubleTapTimeout((prev) => {
+                                    if (prev !== undefined) clearTimeout(prev);
+                                    return setTimeout(() => {
+                                        setDoubleTapMode(false);
+                                    }, appSettings.doubleTapTimeout);
+                                });
+                            }
+                        }
+                    }
+
                     pannable.update(panningTouches(touches));
                     applyTouches(touches);
                 }}
@@ -184,6 +312,7 @@ export default function Editor(props: EditorProps) {
                 <PixelPerfectCanvas
                     style={{width: "100%", height: "100%"}}
                     onAttach={(canvas) => {
+                        canvas.tabIndex = 0;
                         setCanvas(canvas);
                         setCenter([canvas.width / 2, canvas.height / 2]);
                     }}
