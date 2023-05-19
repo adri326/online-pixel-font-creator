@@ -15,8 +15,8 @@ export type GlyphSettingsProps = {
 // TODO: have a preview of the new coordinates
 // TODO: add buttons for resetting glyph
 export default function GlyphSettings(props: GlyphSettingsProps) {
-    const [temporaryWidth, setTemporaryWidth] = createSignal(0);
-    const [temporaryHeight, setTemporaryHeight] = createSignal(0);
+    const [temporaryWidth, setTemporaryWidth] = createSignal(props.currentGlyph().width);
+    const [temporaryHeight, setTemporaryHeight] = createSignal(props.currentGlyph().height);
     const [corner, setCorner] = createSignal<Corner>(Corner.TOP_RIGHT);
 
     const [pasteGlyph, setPasteGlyph] = createSignal("");
@@ -55,7 +55,7 @@ export default function GlyphSettings(props: GlyphSettingsProps) {
                 type="number"
                 prefix="Width:"
                 size="tiny"
-                placeholder={() => props.currentGlyph().width}
+                value={temporaryWidth}
                 description="The global width of glyphs"
                 onChange={setTemporaryWidth}
             />
@@ -63,7 +63,7 @@ export default function GlyphSettings(props: GlyphSettingsProps) {
                 type="number"
                 prefix="Height:"
                 size="tiny"
-                placeholder={() => props.currentGlyph().height}
+                value={temporaryHeight}
                 description="The global height of glyphs"
                 onChange={setTemporaryHeight}
             />
@@ -81,16 +81,28 @@ export default function GlyphSettings(props: GlyphSettingsProps) {
                 onChange={(corner: Corner) => setCorner(corner)}
             />
         </div>
-        <Button
-            theme="settings"
-            onClick={() => {
-                const glyph = props.currentGlyph().resize(temporaryWidth(), temporaryHeight(), corner());
+        <div class={classes.flex}>
+            <Button
+                theme="settings"
+                onClick={() => {
+                    const glyph = props.currentGlyph().resize(temporaryWidth(), temporaryHeight(), corner());
 
-                props.setCurrentGlyph(glyph);
-            }}
-        >
-            Resize glyph
-        </Button>
+                    props.setCurrentGlyph(glyph);
+                }}
+            >
+                Resize glyph
+            </Button>
+            <Button
+                theme="settings"
+                onClick={() => {
+                    const glyph = props.currentGlyph().resizeToFit(corner(), true, false);
+
+                    props.setCurrentGlyph(glyph);
+                }}
+            >
+                Resize to fit
+            </Button>
+        </div>
 
         <h2>Glyph metrics</h2>
         <div class={classes.flex}>

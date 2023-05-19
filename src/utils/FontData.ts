@@ -78,6 +78,29 @@ export class Glyph {
 
         return result;
     }
+
+    resizeToFit(corner: Corner, horizontal: boolean, vertical: boolean): Glyph {
+        let minX = this.width - 1;
+        let maxX = 0;
+        let minY = this.height - 1;
+        let maxY = 0;
+
+        for (let y = 0; y < this.height; y++) {
+            for (let x = 0; x < this.width; x++) {
+                if (this.get(x, y)) {
+                    minX = Math.min(minX, x);
+                    maxX = Math.max(maxX, x);
+                    minY = Math.min(minY, y);
+                    maxY = Math.max(maxY, y);
+                }
+            }
+        }
+
+        const width = corner === Corner.BOTTOM_LEFT || corner === Corner.TOP_LEFT ? this.width - minX + 1 : maxX + 1;
+        const height = corner === Corner.TOP_LEFT || corner === Corner.TOP_RIGHT ? this.height - minY + 1 : maxY + 1;
+
+        return this.resize(horizontal ? width : this.width, vertical ? height : this.height, corner);
+    }
 }
 
 export type FontData = {
